@@ -21,6 +21,12 @@ class Bitrix24(object):
         self.user_id = user_id
 
     def _get_oauth_endpoint(self, action, query=None):
+        """
+        Build an OAuth URL with/out query parameters.
+        :param action: str Action name of an OAuth endpoint
+        :param query: dict Query parameters
+        :return: str OAuth endpoint
+        """
         endpoint = self._oauth_path_template.format(
             domain=self.domain,
             action=action
@@ -31,6 +37,12 @@ class Bitrix24(object):
         return endpoint
 
     def get_authorize_endpoint(self, **extra_query):
+        """
+        Build an authorize URL to request an authorization code from
+        a remote server using a browser.
+        :param extra_query: dict Additional query parameters
+        :return: str Authorize endpoint
+        """
         query = extra_query.copy()
         query.update({
             'client_id': self.client_id,
@@ -40,7 +52,7 @@ class Bitrix24(object):
 
     def get_tokens(self):
         """
-        Return the class access and refresh tokens.
+        Return current access and refresh tokens of the instance.
         :return: dict Access and refresh tokens
         """
         return {
@@ -49,12 +61,22 @@ class Bitrix24(object):
         }
 
     def _request_tokens(self, query):
+        """
+        Request handler of an OAuth tokens endpoint.
+        :param query: dict Query parameters
+        :return: dict Encoded response text
+        """
         url = self._get_oauth_endpoint('token')
         r = requests.get(url, params=query)
         result = json.loads(r.text)
         return result
 
     def request_tokens(self, code, **extra_query):
+        """
+        Request access and refresh tokens of a Bitrix24 server.
+        :param code: str Authentication request code
+        :param extra_query: dict Additional query parameters
+        """
         query = extra_query.copy()
         query.update({
             'client_id': self.client_id,
@@ -75,6 +97,7 @@ class Bitrix24(object):
     def refresh_tokens(self, **extra_query):
         """
         Refresh class tokens by appropriate requested tokens.
+        :param extra_query: dict Additional query parameters
         """
         query = extra_query.copy()
         query.update({
