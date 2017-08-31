@@ -70,7 +70,10 @@ class Bitrix24(object):
         :return: dict Encoded response text
         """
         url = self._get_oauth_endpoint('token')
-        r = requests.get(url, params=query)
+        try:
+            r = requests.get(url, params=query)
+        except ConnectionError:
+            raise ValueError('Unexpected URL schema for %s' % url)
         result = json.loads(r.text)
         return result
 
@@ -129,7 +132,10 @@ class Bitrix24(object):
             transport=self.transport
         )
         query = {'auth': self.access_token}
-        r = requests.post(url, json=params, params=query)
+        try:
+            r = requests.post(url, json=params, params=query)
+        except ConnectionError:
+            raise ValueError('Unexpected URL schema for %s' % url)
         result = json.loads(r.text)
         return result
 
