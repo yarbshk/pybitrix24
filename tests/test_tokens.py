@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from app.bitrix24 import Bitrix24
+from bitrix24 import Bitrix24
 
 
 class Bitrix24TokensTest(unittest.TestCase):

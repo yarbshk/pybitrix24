@@ -1,7 +1,7 @@
 import unittest
 import urllib.parse
 
-from app.bitrix24 import Bitrix24
+from bitrix24 import Bitrix24
 
 
 class Bitrix24HeadlessTest(unittest.TestCase):
