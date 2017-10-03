@@ -1,18 +1,7 @@
-import json
 import requests
-import urllib.parse
 
-from bitrix24 import exceptions
-
-
-def resolve_response(response):
-    try:
-        result = json.loads(response.text)
-    except AttributeError:
-        result = None
-    except TypeError:
-        result = None
-    return result
+from bitrix24 import utils
+from urllib.parse import urlencode
 
 
 class Bitrix24(object):
@@ -44,14 +33,6 @@ class Bitrix24(object):
             'refresh_token': self.refresh_token
         }
 
-    def resolve_client_endpoint(self):
-        """
-        Returns correct client endpoint even if wasn't provided.
-        :return: str Client endpoint
-        """
-        return self.client_endpoint \
-            or self._client_endpoint_template.format(domain=self.domain)
-
     def resolve_authorize_endpoint(self, **extra_query):
         """
         Builds an authorize URL to request an authorization code from. See:
@@ -68,6 +49,14 @@ class Bitrix24(object):
         endpoint = self._get_oauth_endpoint('authorize', query=query)
         return endpoint
 
+    def resolve_client_endpoint(self):
+        """
+        Returns correct client endpoint even if wasn't provided.
+        :return: str Client endpoint
+        """
+        return self.client_endpoint \
+            or self._client_endpoint_template.format(domain=self.domain)
+
     def _get_oauth_endpoint(self, action, query=None):
         """
         Builds an OAuth URL with/out query parameters.
@@ -80,7 +69,7 @@ class Bitrix24(object):
             action=action
         )
         if query is not None:
-            endpoint += '?{}'.format(endpoint, urllib.parse.urlencode(query))
+            endpoint += '?{}'.format(endpoint, urlencode(query))
         return endpoint
 
     def _request_tokens(self, query):
@@ -94,7 +83,7 @@ class Bitrix24(object):
             r = requests.get(url, params=query)
         except requests.exceptions.RequestException:
             r = None
-        result = resolve_response(r)
+        result = utils.resolve_response(r)
         return result
 
     def request_tokens(self, code, **extra_query):
@@ -156,7 +145,7 @@ class Bitrix24(object):
             r = requests.post(url, json=params, params=query)
         except requests.exceptions.RequestException:
             r = None
-        result = resolve_response(r)
+        result = utils.resolve_response(r)
         return result
 
     def call_batch(self, calls, halt_on_error=False):
@@ -169,7 +158,7 @@ class Bitrix24(object):
         :return: dict Encoded response text
         """
         result = self.call_method('batch', {
-            'cmd': calls,
+            'cmd': utils.prepare_batch(calls),
             'halt': halt_on_error
         })
         return result
