@@ -29,7 +29,7 @@ Looks like not bad, but you can't do anything yet. You must fill out all require
 
 ```python
     # Get authorization URL to request authorization code via browser
->>> bx24.get_authorize_endpoint()
+>>> bx24.resolve_authorize_endpoint()
 'https://your-domain.bitrix24.com/oauth/authorize/?client_id=your.client.id&response_type=code'
     # Request tokens to interact with Bitrix24 API
 >>> bx24.request_tokens('requested_authorization_code')

@@ -2,9 +2,22 @@ import json
 import requests
 import urllib.parse
 
+from bitrix24 import exceptions
+
+
+def resolve_response(response):
+    try:
+        result = json.loads(response.text)
+    except AttributeError:
+        result = None
+    except TypeError:
+        result = None
+    return result
+
 
 class Bitrix24(object):
-    _oauth_path_template = 'https://{domain}/oauth/{action}/'
+    _client_endpoint_template = 'https://{domain}/rest/'
+    _oauth_endpoint_template = 'https://{domain}/oauth/{action}/'
 
     def __init__(self, domain, client_id, client_secret, access_token=None,
                  client_endpoint=None, expires_in=3600, refresh_token=None,
@@ -21,23 +34,25 @@ class Bitrix24(object):
         self.transport = transport # Allowable values are 'json' or 'xml'
         self.user_id = user_id # The default value means current user
 
-    def _get_oauth_endpoint(self, action, query=None):
+    def get_tokens(self):
         """
-        Builds an OAuth URL with/out query parameters.
-        :param action: str Action name of an OAuth endpoint
-        :param query: dict Query parameters
-        :return: str OAuth endpoint
+        Returns current access and refresh tokens of the instance.
+        :return: dict Access and refresh tokens
         """
-        endpoint = self._oauth_path_template.format(
-            domain=self.domain,
-            action=action
-        )
-        if query is not None:
-            query = urllib.parse.urlencode(query)
-            endpoint = '{}?{}'.format(endpoint, query)
-        return endpoint
+        return {
+            'access_token': self.access_token,
+            'refresh_token': self.refresh_token
+        }
 
-    def get_authorize_endpoint(self, **extra_query):
+    def resolve_client_endpoint(self):
+        """
+        Returns correct client endpoint even if wasn't provided.
+        :return: str Client endpoint
+        """
+        return self.client_endpoint \
+            or self._client_endpoint_template.format(domain=self.domain)
+
+    def resolve_authorize_endpoint(self, **extra_query):
         """
         Builds an authorize URL to request an authorization code from. See:
         https://training.bitrix24.com/rest_help/oauth/app_authentication.php
@@ -53,15 +68,20 @@ class Bitrix24(object):
         endpoint = self._get_oauth_endpoint('authorize', query=query)
         return endpoint
 
-    def get_tokens(self):
+    def _get_oauth_endpoint(self, action, query=None):
         """
-        Returns current access and refresh tokens of the instance.
-        :return: dict Access and refresh tokens
+        Builds an OAuth URL with/out query parameters.
+        :param action: str Action name of an OAuth endpoint
+        :param query: dict Query parameters
+        :return: str OAuth endpoint
         """
-        return {
-            'access_token': self.access_token,
-            'refresh_token': self.refresh_token
-        }
+        endpoint = self._oauth_endpoint_template.format(
+            domain=self.domain,
+            action=action
+        )
+        if query is not None:
+            endpoint += '?{}'.format(endpoint, urllib.parse.urlencode(query))
+        return endpoint
 
     def _request_tokens(self, query):
         """
@@ -72,9 +92,9 @@ class Bitrix24(object):
         url = self._get_oauth_endpoint('token')
         try:
             r = requests.get(url, params=query)
-        except ConnectionError:
-            raise ValueError('Unexpected URL schema for %s' % url)
-        result = json.loads(r.text)
+        except requests.exceptions.RequestException:
+            r = None
+        result = resolve_response(r)
         return result
 
     def request_tokens(self, code, **extra_query):
@@ -127,16 +147,16 @@ class Bitrix24(object):
         :return: dict Encoded response text
         """
         url = '{endpoint}{method}.{transport}'.format(
-            endpoint=self.client_endpoint,
+            endpoint=self.resolve_client_endpoint(),
             method=method,
             transport=self.transport
         )
         query = {'auth': self.access_token}
         try:
             r = requests.post(url, json=params, params=query)
-        except ConnectionError:
-            raise ValueError('Unexpected URL schema for %s' % url)
-        result = json.loads(r.text)
+        except requests.exceptions.RequestException:
+            r = None
+        result = resolve_response(r)
         return result
 
     def call_batch(self, calls, halt_on_error=False):
@@ -180,7 +200,7 @@ class Bitrix24(object):
         :return: dict Encoded response text
         """
         result = self.call_method('event.unbind', {
-            'auth_type': auth_type,
+            'auth_type': auth_type or self.user_id,
             'event': event,
             'handler': handler
         })

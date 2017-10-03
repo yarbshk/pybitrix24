@@ -49,13 +49,13 @@ class Bitrix24HeadlessTest(unittest.TestCase):
         }
         # Without optional parameters
         url = self._get_url(manual_endpoint, manual_query)
-        self.assertEqual(self.bx24.get_authorize_endpoint(), url)
+        self.assertEqual(self.bx24.resolve_authorize_endpoint(), url)
         # With optional parameters
         param = {'a': 1}
         extra_query = param
         extra_query.update(manual_query)
         url = self._get_url(manual_endpoint, extra_query)
-        origin_endpoint = self.bx24.get_authorize_endpoint(**param)
+        origin_endpoint = self.bx24.resolve_authorize_endpoint(**param)
         self.assertEqual(origin_endpoint, url)
 
     def test_get_tokens(self):
