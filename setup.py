@@ -4,7 +4,7 @@ setup(
     name='bitrix24-python3-client',
     description='A tiny Python3 client to make requests of Bitrix24 API.',
     keywords='bitrix24 api rest python3 client',
-    version='0.3.2',
+    version='0.3.3',
     url='https://github.com/yarbshk/bitrix24-python3-client',
     author='Yuriy Rabeshko',
     author_email='george.rabeshko@gmail.com',
