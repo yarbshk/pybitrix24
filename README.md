@@ -68,7 +68,7 @@ Make a **batch call** (many single calls by one request):
 ```python
     # The following example needs the `user` and `department` permissions
 >>> bx24.call_batch({
-...     'get_user': ['user.current', {}],
+...     'get_user': ('user.current', {}), # or 'user.current'
 ...     'get_department': {
 ...         'method': 'department.get',
 ...         'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
@@ -81,13 +81,39 @@ Make an **event binding** (shortcut for the `event.bind` method):
 
 ```python
 >>> bx24.call_bind('OnAppUpdate', 'https://example.com/')
+{'result': {...}}
 ```
 
 Make an **event unbinding** (shortcut for the `event.unbind` method):
 
 ```python
 >>> bx24.call_unbind('OnAppUpdate', 'https://example.com/')
+{'result': {...}}
 ```
+
+#### Get closer to webhooks
+
+All methods described above come in handy when you develop applications or similar tricky things. However, sometimes will be enough to call a **webhook** - simplified version of rest-events and rest-teams that does not require a application to write.
+
+So, let's create a simple webhook!
+
+If you need to make webhook calls **only**, the following configuration will fit (in other case see verbose configuration above):
+
+```python
+    # Import Bitrix24 client to work with
+>>> from bitrix24 import Bitrix24
+    # Create instance with basic configuration
+>>> bx24 = Bitrix24('your-domain.bitrix24.com', user_id=1)
+```
+
+Make a **webhook call**:
+
+```python
+    # You can pass a dict of params as third argument
+>>> bx24.call_webhook('profile', 'xxxxxxxxxxxxxxxx')
+{'result': {...}}
+```
+
 
 That's end of quick introduction. To learn details, **explore source code** (believe me those code is such simple as this client). Good luck!
 

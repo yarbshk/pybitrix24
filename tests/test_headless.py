@@ -23,14 +23,14 @@ class Bitrix24HeadlessTest(unittest.TestCase):
     def test_get_oauth_endpoint(self):
         action, query = 'action', {'y': 1}
         # Without optional argument
-        endpoint1 = self.bx24._get_oauth_endpoint(action)
+        endpoint1 = self.bx24._resolve_oauth_endpoint(action)
         endpoint2 = self.bx24._oauth_path_template.format(
             domain=self.bx24.domain,
             action=action
         )
         self.assertEqual(endpoint1, endpoint2)
         # With optional argument
-        endpoint3 = self.bx24._get_oauth_endpoint(action, query)
+        endpoint3 = self.bx24._resolve_oauth_endpoint(action, query)
         endpoint4 = self.bx24._oauth_path_template.format(
             domain=self.bx24.domain,
             action=action
