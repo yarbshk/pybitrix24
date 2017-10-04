@@ -5,7 +5,8 @@ from bitrix24 import Bitrix24
 
 
 class Bitrix24Test(unittest.TestCase):
-    user_id = 1
+    code = os.environ.get('TEST_WEBHOOK_CODE')
+    user_id = os.environ.get('TEST_USER_ID', 1)
     event = 'OnAppUpdate'
     handler = 'https://example.com/'
 
@@ -28,7 +29,7 @@ class Bitrix24Test(unittest.TestCase):
 
     def test_call_batch(self):
         calls = {
-            'get_user': ['user.current', {}],
+            'get_user': ('user.current', {}),
             'get_department': {
                 'method': 'department.get',
                 'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
@@ -36,7 +37,8 @@ class Bitrix24Test(unittest.TestCase):
         }
         result = self.bx24.call_batch(calls, True)
         self.assertIsInstance(result, dict)
-        self.assertNotIn('result_error', result['result'])
+        self.assertNotEqual(result['result'], {})
+        self.assertListEqual(result['result']['result_error'], [])
 
     def test_binding(self):
         self._test_call_bind()
@@ -49,5 +51,10 @@ class Bitrix24Test(unittest.TestCase):
 
     def _test_call_unbind(self):
         result = self.bx24.call_unbind(self.event, self.handler)
+        self.assertIsInstance(result, dict)
+        self.assertNotIn('error', result)
+
+    def test_call_webhook(self):
+        result = self.bx24.call_method('profile', self.code)
         self.assertIsInstance(result, dict)
         self.assertNotIn('error', result)

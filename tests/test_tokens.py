@@ -6,7 +6,7 @@ from bitrix24 import Bitrix24
 
 class Bitrix24TokensTest(unittest.TestCase):
     def setUp(self):
-        self.code = os.environ.get('TEST_CODE')
+        self.code = os.environ.get('TEST_AUTH_CODE')
         self.bx24 = Bitrix24(
             domain=os.environ.get('TEST_DOMAIN'),
             client_id=os.environ.get('TEST_CLIENT_ID'),
@@ -14,6 +14,8 @@ class Bitrix24TokensTest(unittest.TestCase):
         )
 
     def test_tokens(self):
+        if not self.code:
+            raise ValueError('The "TEST_AUTH_CODE" is not provided.')
         self._test_request_tokens()
         self._test_refresh_tokens()
 
