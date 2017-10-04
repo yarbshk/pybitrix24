@@ -3,7 +3,6 @@ version: "2"
 services:
   server:
     build: .
-    command: python -m unittest -v tests.test_headless
     environment:
       - TEST_ACCESS_TOKEN=${TEST_ACCESS_TOKEN}
       - TEST_CLIENT_ENDPOINT=${TEST_CLIENT_ENDPOINT}
