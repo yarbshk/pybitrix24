@@ -74,7 +74,7 @@ class Bitrix24(object):
             action=action
         )
         if query is not None:
-            endpoint += '?{}'.format(endpoint, urlencode(query))
+            endpoint += '?{}'.format(urlencode(query))
         return endpoint
 
     def _resolve_webhook_endpoint(self, code):
@@ -84,6 +84,7 @@ class Bitrix24(object):
         :return: str Webhook endpoint
         """
         return self._webhook_endpoint_template.format(
+            domain=self.domain,
             user_id=self.user_id,
             code=code
         )
