@@ -118,7 +118,7 @@ Make a **webhook call**:
 That's end of quick introduction. To learn details, **explore source code** (believe me those code is such simple as this client). Good luck!
 
 ## Status
-The client is passing the **beta testing** stage.
+The client is already ready to use (v0.3.3).
 
 I'll probably add more functionality later. This is what I need right now.
 
