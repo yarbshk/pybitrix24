@@ -15,7 +15,7 @@ class Bitrix24(object):
     def __init__(self, domain, client_id=None, client_secret=None,
                  access_token=None, client_endpoint=None, expires_in=3600,
                  refresh_token=None, scope='', server_endpoint=None,
-                 transport='json', user_id=0):
+                 transport='json', user_id=0, auth_domain=None):
         self.access_token = access_token
         self.client_id = client_id
         self.client_endpoint = client_endpoint # Must endswith a slash
@@ -27,6 +27,7 @@ class Bitrix24(object):
         self.server_endpoint = server_endpoint # Must endswith a slash
         self.transport = transport # Allowable values are 'json' or 'xml'
         self.user_id = user_id # The default value means current user
+        self.auth_domain = auth_domain
 
     def get_tokens(self):
         """
@@ -70,7 +71,7 @@ class Bitrix24(object):
         :return: str OAuth endpoint
         """
         endpoint = self._oauth_endpoint_template.format(
-            domain=self.domain,
+            domain=self.auth_domain or self.domain,
             action=action
         )
         if query is not None:

@@ -123,4 +123,4 @@ The client is already ready to use (v0.3.3).
 I'll probably add more functionality later. This is what I need right now.
 
 ## Copyright and License
-Copyright (c) 2017-2018 Yuriy Rabeshko. Code released under the MIT license.
+Copyright (c) 2017-2019 Yuriy Rabeshko. Code released under the MIT license.
