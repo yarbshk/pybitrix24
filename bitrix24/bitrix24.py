@@ -183,6 +183,23 @@ class Bitrix24(object):
             'halt': halt_on_error
         })
         return result
+    
+    def call_batch_webhook(self, calls, code, halt_on_error=False):
+        """
+        Groups many single methods into a request. Can include macros
+        to access the results of the previous calls in the batch. See:
+        https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php
+        :param calls: dict Sub-methods with params
+        :param code: webhook unique code
+        :param halt_on_error: bool Halt on error
+        :return: dict Decoded response text
+        """
+
+        result = self.call_webhook('batch', code, {
+            'cmd': utils.prepare_batch(calls),
+            'halt': halt_on_error
+        })
+        return result
 
     def call_bind(self, event, handler, auth_type=None):
         """
