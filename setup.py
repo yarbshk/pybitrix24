@@ -12,7 +12,7 @@ setup(
     long_description_content_type='text/markdown',
     description='A tiny Python3 client to make requests of Bitrix24 API.',
     keywords='bitrix24 api rest python3 client',
-    version='0.3.4',
+    version='0.4.0',
     url='https://github.com/yarbshk/bitrix24-python3-client',
     author='Yuriy Rabeshko',
     author_email='george.rabeshko@gmail.com',
