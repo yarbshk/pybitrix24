@@ -128,6 +128,7 @@ class Bitrix24(object):
         self.scope = result.get('scope')
         self.server_endpoint = result.get('server_endpoint')
         self.user_id = result.get('user_id')
+        return result
 
     def refresh_tokens(self, **extra_query):
         """
