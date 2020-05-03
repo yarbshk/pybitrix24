@@ -1,4 +1,4 @@
-# bitrix24-python3-client
+# pybitrix24
 A tiny Python3 client to make requests of Bitrix24 API.
 
 ## Requirements
@@ -6,10 +6,10 @@ Depends on the following packages (see `requirements.txt`):
 - requests
 
 ## Installation
-First of all install necessary dependencies (see above) and **bitrix24-python3-client** itself:
+Install the library using pip:
 
 ```bash
-$ pip install bitrix24-python3-client
+$ pip install pybitrix24
 ```
 
 ## Getting started
@@ -20,27 +20,20 @@ First of all you need to **create Bitrix24 instance** to work with. Let's create
 
 ```python
     # Import Bitrix24 client to work with
->>> from bitrix24 import Bitrix24
+>>> from pybitrix24 import Bitrix24
     # Create instance with basic configuration
->>> bx24 = Bitrix24('your-domain.bitrix24.com', 'your.client.id', 'your_client_secret')
+>>> bx24 = Bitrix24('your-hostname.bitrix24.com', 'your.client.id', 'YourClientSecret')
 ```
 
 Looks like not bad, but you can't do anything yet. You must fill out all required attributes of the Bitrix24 client. To do that we can **request it** directly from a Bitrix24 server (**or** pass as optional kwargs for the Bitrix24 client before creating an instance):  
 
 ```python
-    # Get authorization URL to request authorization code via browser
->>> bx24.resolve_authorize_endpoint()
-'https://your-domain.bitrix24.com/oauth/authorize/?client_id=your.client.id&response_type=code'
+    # Get authorization URL to request authorization code manually via browser
+>>> bx24.build_authorization_url()
+'https://your-hostname.bitrix24.com/oauth/authorize/?client_id=your.client.id&response_type=code'
     # Request tokens to interact with Bitrix24 API
->>> bx24.request_tokens('requested_authorization_code')
-```
-
-You can **check if all's well** by following command which simply return dict of current tokens:
-
-```python
-    # Get current access and refresh tokens
->>> bx24.get_tokens()
-{'access_token': 'requested_access_token', 'refresh_token': 'requested_refresh_token'}
+>>> bx24.obtain_tokens('ObtainedAuthorizationCode')
+{'access_token': 'SomeAccessToken', 'refresh_token': 'SomeRefreshToken', ...}
 ```
 
 **Pay attention!** Your tokens have 1 hour lifecycle by default therefore you may need to **refresh tokens** at the expiration of this time:
@@ -48,9 +41,7 @@ You can **check if all's well** by following command which simply return dict of
 ```python
     # Refresh current tokens (refresh token required)
 >>> bx24.refresh_tokens()
-    # Check whether old tokens was replaced
->>> bx24.get_tokens()
-{'access_token': 'new_access_token', 'refresh_token': 'new_refresh_token'}
+{'access_token': 'NewAccessToken', 'refresh_token': 'NewRefreshToken', ...}
 ```
 
 Okay, all the preparation works done and now we can **make API calls to a Bitrix24 server** (don't forget to check the `client_endpoint` attribute of the Bitrix24 client whether it exists).
@@ -59,7 +50,7 @@ Make a **single call**:
 
 ```python
     # The following example needs the `user` permission
->>> bx24.call_method('user.get', {'ID': 1})
+>>> bx24.call('user.get', {'ID': 1})
 {'result': {...}}
 ```
 
@@ -101,9 +92,9 @@ If you need to make webhook calls **only**, the following configuration will fit
 
 ```python
     # Import Bitrix24 client to work with
->>> from bitrix24 import Bitrix24
+>>> from pybitrix24 import Bitrix24
     # Create instance with basic configuration
->>> bx24 = Bitrix24('your-domain.bitrix24.com', user_id=1)
+>>> bx24 = Bitrix24('your-hostname.bitrix24.com', user_id=3)
 ```
 
 Make a **webhook call**:
@@ -114,13 +105,17 @@ Make a **webhook call**:
 {'result': {...}}
 ```
 
+Make a **batch webhook call**:
 
-That's end of quick introduction. To learn details, **explore source code** (believe me those code is such simple as this client). Good luck!
+```python
+    # You can pass a dict of params as third argument
+>>> bx24.call_batch_webhook({
+...     'profile': 'xxxxxxxxxxxxxxxx',
+... })
+{'result': {'result': {...}}}
+```
 
-## Status
-The client is already ready to use (v0.3.3).
-
-I'll probably add more functionality later. This is what I need right now.
+That's the end of quick introduction. To learn details, **explore source code** (believe me those code is such simple as this client). Good luck!
 
 ## Copyright and License
-Copyright (c) 2017-2019 Yuriy Rabeshko. Code released under the MIT license.
+Copyright © 2017 Yurii Rabeshko. Code released under the MIT license.
