@@ -1,13 +1,16 @@
 import time
 
-from urllib.parse import urlparse, parse_qs
-
 from selenium.webdriver import Chrome
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
+
+try:
+    from urllib.parse import urlparse, parse_qs
+except ImportError:
+    from urlparse import urlparse, parse_qs
 
 
 def parse_query_param(param_name, url):
@@ -23,7 +26,7 @@ class UnsafeAuthCodeProvider:
     """
     bitrix24_passport_url = 'https://www.bitrix24.net/'
 
-    def __init__(self, bitrix24, headless=True) -> None:
+    def __init__(self, bitrix24, headless=True):
         self.bx24 = bitrix24
         self.headless = headless
         self.driver = Chrome(options=self._provide_chrome_options())

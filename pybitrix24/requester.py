@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from json import JSONDecodeError, load
+from json import load
 
 from .exceptions import PBx24RequestError, PyBitrix24Error, PBx24ArgumentError
 
@@ -37,7 +37,7 @@ def request(method, url, params):
 
     try:
         return load(response)
-    except JSONDecodeError or TypeError as e:
+    except Exception as e:
         raise PyBitrix24Error("Error decoding of server response", e)
 
 

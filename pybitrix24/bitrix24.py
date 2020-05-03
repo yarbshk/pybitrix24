@@ -22,8 +22,7 @@ class Bitrix24(object):
 
     _call_url_template = '{url}{method}.json'
 
-    def __init__(self, hostname: str, client_id: str = None,
-                 client_secret: str = None, user_id: int = 1):
+    def __init__(self, hostname, client_id=None, client_secret=None, user_id=1):
         """
         Initialize object attributes. Note that the application ID and key
         arguments are not required only if webhooks will be called.
@@ -44,7 +43,7 @@ class Bitrix24(object):
         self._access_token = None
         self._refresh_token = None
 
-    def build_authorization_url(self, **kwargs) -> str:
+    def build_authorization_url(self, **kwargs):
         """
         Generate a URL for requesting an authorization code grant via browser.
 
@@ -87,7 +86,7 @@ class Bitrix24(object):
 
         return url
 
-    def obtain_tokens(self, code: str, **kwargs) -> dict:
+    def obtain_tokens(self, code, **kwargs):
         """
         Request access and refresh tokens using the authorization code grant.
         Refer to :meth:`build_authorization_url` for obtaining an authorization
@@ -133,7 +132,7 @@ class Bitrix24(object):
         self._refresh_token = data.get('refresh_token')
         return data
 
-    def refresh_tokens(self, **kwargs) -> dict:
+    def refresh_tokens(self, **kwargs):
         """
         Request new access and refresh tokens if :attr:`refresh_token` is not
         expired yet (1 hour by default), in other case error response returns.
@@ -162,7 +161,7 @@ class Bitrix24(object):
         data = self._request_tokens(kwargs)
         return data
 
-    def call(self, method: str, params: dict = None) -> dict:
+    def call(self, method, params=None):
         """
         Send a parametrized request to the Bitrix24 REST API endpoint. This
         method automatically injects an access token to the request.
@@ -188,7 +187,7 @@ class Bitrix24(object):
         data = request('post', uri, params)
         return data
 
-    def call_batch(self, calls: dict, halt_on_error: bool = False) -> dict:
+    def call_batch(self, calls, halt_on_error=False):
         """
         Groups many single methods into a request. Can include macros
         to access the results of the previous calls in the batch. See:
@@ -203,8 +202,7 @@ class Bitrix24(object):
         })
         return data
 
-    def call_bind(self, event: str, handler: str,
-                  auth_type: int = None) -> dict:
+    def call_bind(self, event, handler, auth_type=None):
         """
         Installs a new event handler. See:
         https://training.bitrix24.com/rest_help/general/event_bind.php
@@ -220,8 +218,7 @@ class Bitrix24(object):
         })
         return data
 
-    def call_unbind(self, event: str, handler: str,
-                    auth_type: int = None) -> dict:
+    def call_unbind(self, event, handler, auth_type=None):
         """
         Uninstalls a previously installed event handler. See:
         https://training.bitrix24.com/rest_help/general/event_unbind.php
@@ -237,7 +234,7 @@ class Bitrix24(object):
         })
         return data
 
-    def call_webhook(self, method: str, code: str, params: dict = None) -> dict:
+    def call_webhook(self, method, code, params=None):
         """
         Call a simplified version of rest-events and rest-teams that does not
         require a program to write.
@@ -252,8 +249,7 @@ class Bitrix24(object):
         data = self._call(url, method, copy_or_create_dict(params))
         return data
 
-    def call_batch_webhook(self, calls: dict, code: str,
-                           halt_on_error: bool = False):
+    def call_batch_webhook(self, calls, code, halt_on_error=False):
         """
         Groups many single methods into a request. Can include macros
         to access the results of the previous calls in the batch. See:
