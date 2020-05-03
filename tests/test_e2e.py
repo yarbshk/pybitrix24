@@ -2,7 +2,7 @@ import os
 import unittest
 
 from pybitrix24 import Bitrix24
-from .automation import UnsafeAuthCodeProvider
+from tests.automation import UnsafeAuthCodeProvider
 
 
 def require_env_var(name):

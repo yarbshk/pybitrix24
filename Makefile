@@ -1,12 +1,12 @@
-test: export TEST_ACCESS_TOKEN = your_access_tokem
-test: export TEST_CLIENT_ENDPOINT = https://your-domain.bitrix24.com/rest/
-test: export TEST_CLIENT_ID = your.client.id
-test: export TEST_CLIENT_SECRET = your_client_secret
-test: export TEST_CODE = requested_authentication_code
-test: export TEST_DOMAIN = your-domain.bitrix24.com
-test: export TEST_REFRESH_TOKEN = requested_refresh_token
+test: export TEST_HOSTNAME=my-hostname.bitrix24.com
+test: export TEST_CLIENT_ID=my.client.id
+test: export TEST_CLIENT_SECRET=MyClientSecret
+test: export TEST_USER_ID=1
+test: export TEST_WEBHOOK_CODE=MyWebhookCode
+test: export TEST_USER_LOGIN=my.name@mail.com
+test: export TEST_USER_PASSWORD=MyPassword
 test:
-	python -m unittest tests
+	python -m unittest discover -s tests -v -f
 
 doc:
 	.\docs\make.bat html

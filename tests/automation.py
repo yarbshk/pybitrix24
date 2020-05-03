@@ -31,6 +31,8 @@ class UnsafeAuthCodeProvider:
 
     def _provide_chrome_options(self):
         chrome_options = Options()
+        chrome_options.add_experimental_option(
+            "excludeSwitches", ["enable-logging"])  # disable logging
         if self.headless:
             chrome_options.add_argument('--headless')
         return chrome_options
