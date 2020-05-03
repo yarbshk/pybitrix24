@@ -1,4 +1,3 @@
-requests
 tox
 setuptools
 wheel

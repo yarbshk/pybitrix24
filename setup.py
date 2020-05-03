@@ -27,9 +27,6 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     packages=find_packages(),
-    install_requires=[
-        'requests>=2.23.0'
-    ],
     python_requires='>=2.6',
     platforms='any'
 )

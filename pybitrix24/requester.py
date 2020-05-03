@@ -1,14 +1,21 @@
-import requests
-
 from collections import OrderedDict
-from json import JSONDecodeError
+from json import JSONDecodeError, load
 
-from .exceptions import PBx24RequestError, PyBitrix24Error
+from .exceptions import PBx24RequestError, PyBitrix24Error, PBx24ArgumentError
 
 try:
+    from urllib.request import urlopen
     from urllib.parse import urlencode
 except ImportError:
+    from urllib import urlopen
     from urllib import urlencode
+
+
+def open_url(url, data=None):
+    try:
+        return urlopen(url, data)
+    except Exception as e:
+        raise PBx24RequestError("Error getting authorization grant", e)
 
 
 def request(method, url, params):
@@ -20,10 +27,16 @@ def request(method, url, params):
     :param params:
     :return:
     """
+    params = urlencode(params)
+    if method == 'get':
+        response = open_url(url + '?' + params)
+    elif method == 'post':
+        response = open_url(url, params.encode('utf-8'))
+    else:
+        raise PBx24ArgumentError("The HTTP method %s is not supported" % method)
+
     try:
-        return requests.request(method, url, params=params).json()
-    except requests.exceptions.RequestException as e:
-        raise PBx24RequestError("Error getting authorization grant", e)
+        return load(response)
     except JSONDecodeError or TypeError as e:
         raise PyBitrix24Error("Error decoding of server response", e)
 

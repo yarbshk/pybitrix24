@@ -2,14 +2,8 @@ from .exceptions import PBx24AttributeError, PBx24ArgumentError
 from .requester import encode_url, request, prepare_batch
 
 
-def safe_copy(d):
+def copy_or_create_dict(d):
     return {} if d is None else d.copy()
-
-
-def copy_and_update(d, kvs):
-    d_copy = safe_copy(d)
-    d_copy.update(kvs)
-    return d_copy
 
 
 class Bitrix24(object):
@@ -184,16 +178,17 @@ class Bitrix24(object):
         :return: Response data
         """
         url = self._method_url_template.format(hostname=self.hostname)
-        data = self._call_with_auth(url, method, params)
+        params = copy_or_create_dict(params)
+        params['auth'] = self._access_token
+        data = self._call(url, method, params)
         return data
 
-    def _call_with_auth(self, url, method, params=None):
+    def _call(self, url, method, params):
         uri = self._call_url_template.format(url=url, method=method)
-        params = copy_and_update(params, {'auth': self._access_token})
         data = request('post', uri, params)
         return data
 
-    def call_batch(self, calls, halt_on_error=False):
+    def call_batch(self, calls: dict, halt_on_error: bool = False) -> dict:
         """
         Groups many single methods into a request. Can include macros
         to access the results of the previous calls in the batch. See:
@@ -203,12 +198,46 @@ class Bitrix24(object):
         :return: dict Decoded response text
         """
         data = self.call('batch', {
-            'cmd': prepare_batch(calls),
+            'cmd': prepare_batch(copy_or_create_dict(calls)),
             'halt': halt_on_error
         })
         return data
 
-    def call_webhook(self, method, code, params=None):
+    def call_bind(self, event: str, handler: str,
+                  auth_type: int = None) -> dict:
+        """
+        Installs a new event handler. See:
+        https://training.bitrix24.com/rest_help/general/event_bind.php
+        :param event: str Event name
+        :param handler: str Handler URL
+        :param auth_type: int User ID
+        :return: dict Decoded response text
+        """
+        data = self.call('event.bind', {
+            'auth_type': auth_type or self.user_id,
+            'event': event,
+            'handler': handler
+        })
+        return data
+
+    def call_unbind(self, event: str, handler: str,
+                    auth_type: int = None) -> dict:
+        """
+        Uninstalls a previously installed event handler. See:
+        https://training.bitrix24.com/rest_help/general/event_unbind.php
+        :param event: str Event name
+        :param handler: str Handler URL
+        :param auth_type: int User ID
+        :return: dict Decoded response text
+        """
+        data = self.call('event.unbind', {
+            'auth_type': auth_type or self.user_id,
+            'event': event,
+            'handler': handler
+        })
+        return data
+
+    def call_webhook(self, method: str, code: str, params: dict = None) -> dict:
         """
         Call a simplified version of rest-events and rest-teams that does not
         require a program to write.
@@ -220,11 +249,11 @@ class Bitrix24(object):
         """
         url = self._webhook_url_template.format(hostname=self.hostname,
                                                 user_id=self.user_id, code=code)
-        params = safe_copy(params)
-        data = self._call_with_auth(url, method, params)
+        data = self._call(url, method, copy_or_create_dict(params))
         return data
 
-    def call_batch_webhook(self, calls, code, halt_on_error=False):
+    def call_batch_webhook(self, calls: dict, code: str,
+                           halt_on_error: bool = False):
         """
         Groups many single methods into a request. Can include macros
         to access the results of the previous calls in the batch. See:
@@ -235,39 +264,7 @@ class Bitrix24(object):
         :return: dict Decoded response text
         """
         data = self.call_webhook('batch', code, {
-            'cmd': prepare_batch(calls),
+            'cmd': prepare_batch(copy_or_create_dict(calls)),
             'halt': halt_on_error
         })
         return data
-
-    def call_bind(self, event, handler, auth_type=None):
-        """
-        Installs a new event handler. See:
-        https://training.bitrix24.com/rest_help/general/event_bind.php
-        :param event: str Event name
-        :param handler: str Handler URL
-        :param auth_type: int User ID
-        :return: dict Decoded response text
-        """
-        result = self.call('event.bind', {
-            'auth_type': auth_type or self.user_id,
-            'event': event,
-            'handler': handler
-        })
-        return result
-
-    def call_unbind(self, event, handler, auth_type=None):
-        """
-        Uninstalls a previously installed event handler. See:
-        https://training.bitrix24.com/rest_help/general/event_unbind.php
-        :param event: str Event name
-        :param handler: str Handler URL
-        :param auth_type: int User ID
-        :return: dict Decoded response text
-        """
-        result = self.call('event.unbind', {
-            'auth_type': auth_type or self.user_id,
-            'event': event,
-            'handler': handler
-        })
-        return result
