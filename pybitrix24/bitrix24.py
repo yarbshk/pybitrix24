@@ -264,3 +264,25 @@ class Bitrix24(object):
             'halt': halt_on_error
         })
         return data
+
+    @staticmethod
+    def get_error_if_present(data):
+        if not isinstance(data, dict):
+            raise PBx24ArgumentError("Data must be a dictionary")
+
+        # Try to get an error from a call response
+        error = data.get('error')
+        if error is not None:
+            return error
+
+        # Check if it's a batch response
+        result = data.get('result')
+        if result is None:
+            return None
+
+        # Try to get an error from a batch call response
+        if not isinstance(result, dict):
+            raise PBx24ArgumentError("Data is not a valid response")
+
+        return result.get('result_error')
+

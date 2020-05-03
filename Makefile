@@ -6,7 +6,7 @@ test: export TEST_WEBHOOK_CODE=MyWebhookCode
 test: export TEST_USER_LOGIN=my.name@mail.com
 test: export TEST_USER_PASSWORD=MyPassword
 test:
-	python -m unittest discover -s tests -v -f
+	tox
 
 doc:
 	.\docs\make.bat html

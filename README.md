@@ -2,7 +2,7 @@
 The simplest zero dependency polyversion Python library for Bitrix24 REST API.
 
 ## Features
-- **Polyversion.** Supported Python versions: 2.6+, 3.2+.
+- **Polyversion.** Supported Python versions: 2.7, 3.5+.
 - **Zero dependency.** It's fast, lightweight and secure.
 - **Reliable.** 85% test coverage.
 - **Just simple.** Examples of usage and clear sources.
@@ -57,14 +57,13 @@ As it was mentioned earlier it's not possible to get the authorization code auto
 
 Congratulations, all the preparatory work is done!
 
-### Requesting resources with an authorization code
+### Requesting resources with an access token
 
-A further turn for requesting Bitrix24 resources.
+A further turn for requesting Bitrix24 resources. An access token injects automatically for all methods prefixed with `call_`.
 
-To make a **single call**:
+To make a **single call** (the `user` permission is required for the following example):
 
 ```python
-    # The following example needs the `user` permission
 >>> bx24.call('user.get', {'ID': 1})
 {'result': {...}}
 ```
@@ -82,14 +81,14 @@ To make a **batch call** that is a few calls per request (the `user` and `depart
 {'result': {'result': {...}}}
 ```
 
-To make an **event binding** (this method calls `event.bind` under the hood):
+To **bind an event** (this method calls `event.bind` under the hood):
 
 ```python
 >>> bx24.call_bind('OnAppUpdate', 'https://example.com/')
 {'result': {...}}
 ```
 
-To make an **event unbinding** (this method calls `event.unbind` under the hood):
+To **unbind an event** (this method calls `event.unbind` under the hood):
 
 ```python
 >>> bx24.call_unbind('OnAppUpdate', 'https://example.com/')
@@ -98,7 +97,7 @@ To make an **event unbinding** (this method calls `event.unbind` under the hood)
 
 ### Requesting resources with a webhook code
 
-Requesting resources with an authorization code is suitable for development of 3rd-party applications that are often quite cumbersome. However, sometimes it's enough to send a few simple calls. This is where webhooks are useful. 
+Requesting resources with an authorization code is suitable for development of 3rd-party applications that are often quite cumbersome. However, sometimes it's enough to send a few simple calls. This is where webhooks come to action. 
 
 If only webhooks are used the minimum required configuration is as simple as the following:
 

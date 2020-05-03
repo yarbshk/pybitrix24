@@ -1,5 +1,7 @@
+import json
+import sys
+
 from collections import OrderedDict
-from json import load
 
 from .exceptions import PBx24RequestError, PyBitrix24Error, PBx24ArgumentError
 
@@ -36,7 +38,10 @@ def request(method, url, params):
         raise PBx24ArgumentError("The HTTP method %s is not supported" % method)
 
     try:
-        return load(response)
+        if sys.version_info.major == 2:
+            return json.load(response)
+        else:
+            return json.loads(response.read().decode('utf-8'))
     except Exception as e:
         raise PyBitrix24Error("Error decoding of server response", e)
 

@@ -2,7 +2,7 @@ import os
 import unittest
 
 from pybitrix24 import Bitrix24
-from tests.automation import UnsafeAuthCodeProvider
+from tests.automation import TokenRefresher
 
 
 def require_env_var(name):
@@ -20,41 +20,41 @@ class Bitrix24EndToEndTests(unittest.TestCase):
 
     webhook_code = require_env_var('TEST_WEBHOOK_CODE')
 
-    user_login = require_env_var('TEST_USER_LOGIN')
-    user_password = require_env_var('TEST_USER_PASSWORD')
+    token_refresher = TokenRefresher(require_env_var('TEST_USER_LOGIN'),
+                                     require_env_var('TEST_USER_PASSWORD'))
 
     def setUp(self):
         self.bx24 = Bitrix24(self.hostname, client_id=self.client_id,
                              client_secret=self.client_secret,
                              user_id=self.user_id)
+        self.token_refresher.update_tokens(self.bx24)
 
-    def obtain_auth_code(self):
-        with UnsafeAuthCodeProvider(self.bx24) as provider:
-            return provider.request_auth_code(self.user_login,
-                                              self.user_password)
+    def tearDown(self):
+        # Make sure tokens are synchronized in case they are updated by a test
+        if self.bx24 is not None:
+            self.token_refresher.access_token = self.bx24._access_token
+            self.token_refresher.refresh_token = self.bx24._refresh_token
 
     def test_obtain_tokens(self):
-        self.assertIsNone(self.bx24._access_token)
-        self.assertIsNone(self.bx24._refresh_token)
-        data = self.bx24.obtain_tokens(self.obtain_auth_code())
+        self.bx24._access_token = None
+        self.bx24._refresh_token = None
+        auth_code = self.token_refresher.obtain_auth_code(self.bx24)
+        data = self.bx24.obtain_tokens(auth_code)
         self.assertEqual(self.bx24._access_token, data['access_token'])
         self.assertEqual(self.bx24._refresh_token, data['refresh_token'])
 
     def test_refresh_tokens(self):
-        self.bx24.obtain_tokens(self.obtain_auth_code())
         data = self.bx24.refresh_tokens()
         self.assertEqual(self.bx24._access_token, data['access_token'])
         self.assertEqual(self.bx24._refresh_token, data['refresh_token'])
 
     def test_call(self):
-        self.bx24.obtain_tokens(self.obtain_auth_code())
         params = {'ID': self.bx24.user_id}
         data = self.bx24.call('user.get', params=params)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
 
     def test_call_batch(self):
-        self.bx24.obtain_tokens(self.obtain_auth_code())
         calls = {
             'get_user': ('user.current', {}),
             'get_department': {
@@ -68,7 +68,6 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         self.assertListEqual(data['result']['result_error'], [])
 
     def test_binding(self):
-        self.bx24.obtain_tokens(self.obtain_auth_code())
         event, handler = 'OnAppUpdate', 'https://example.com/'
         self._test_call_bind(event, handler)
         self._test_call_unbind(event, handler)
@@ -87,7 +86,7 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         data = self.bx24.call_webhook('profile', self.webhook_code)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
-        
+
     def test_call_batch_webhook(self):
         bx24hook = Bitrix24(self.hostname, user_id=1)
         calls = {

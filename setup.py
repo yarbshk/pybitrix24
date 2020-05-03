@@ -12,7 +12,7 @@ setup(
     name='pybitrix24',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    description='The simplest Bitrix24 REST API client written in Python.',
+    description='The simplest zero dependency polyversion Python library for Bitrix24 REST API.',
     keywords='bitrix24 rest api client sdk',
     version='1.0.0',
     url='https://github.com/yarbshk/pybitrix24',
@@ -24,11 +24,14 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
-        'Programming Language :: Python :: 2.6',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
     packages=find_packages(),
-    python_requires='>=2.6',
+    python_requires='>=2.7',
     platforms='any'
 )
