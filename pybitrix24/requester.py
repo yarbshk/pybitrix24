@@ -115,7 +115,7 @@ def encode_url(params):
     return urlencode(url_params, doseq=True)
 
 
-def prepare_batch(calls):
+def prepare_batch_command(calls):
     commands = {}
     for name, call in calls.items():
         if isinstance(call, str):

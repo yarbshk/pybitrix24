@@ -1,9 +1,37 @@
+from .deprecation import deprecated
 from .exceptions import PBx24AttributeError, PBx24ArgumentError
-from .requester import encode_url, request, prepare_batch
+from .requester import encode_url, request, prepare_batch_command
 
 
-def copy_or_create_dict(d):
-    return {} if d is None else d.copy()
+def get_error_if_present(data):
+    if not isinstance(data, dict):
+        raise PBx24ArgumentError("Data must be a dictionary")
+
+    # Try to get an error from a call response
+    error = data.get('error')
+    if error is not None:
+        return error
+
+    # Check if it's a batch response
+    result = data.get('result')
+    if result is None:
+        return None
+
+    # Try to get an error from a batch call response
+    if not isinstance(result, dict):
+        raise PBx24ArgumentError("Data is not a valid response")
+
+    return result.get('result_error')
+
+
+class ConditionalDict(dict):
+    def __init__(self, seq=None, cond=lambda x: x is not None):
+        super().__init__(seq)
+        self.cond = cond
+
+    def __setitem__(self, key, value):
+        if self.cond(value):
+            dict.__setitem__(self, key, value)
 
 
 class Bitrix24(object):
@@ -22,7 +50,8 @@ class Bitrix24(object):
 
     _call_url_template = '{url}{method}.json'
 
-    def __init__(self, hostname, client_id=None, client_secret=None, user_id=1):
+    def __init__(self, hostname, client_id=None, client_secret=None,
+                 user_id=None):
         """
         Initialize object attributes. Note that the application ID and key
         arguments are not required only if webhooks will be called.
@@ -42,6 +71,10 @@ class Bitrix24(object):
         self.user_id = user_id
         self._access_token = None
         self._refresh_token = None
+
+    @deprecated
+    def resolve_authorize_endpoint(self, **kwargs):
+        return self.build_authorization_url(**kwargs)
 
     def build_authorization_url(self, **kwargs):
         """
@@ -86,6 +119,10 @@ class Bitrix24(object):
 
         return url
 
+    @deprecated
+    def request_tokens(self, *args, **kwargs):
+        return self.obtain_tokens(*args, **kwargs)
+
     def obtain_tokens(self, code, **kwargs):
         """
         Request access and refresh tokens using the authorization code grant.
@@ -127,7 +164,6 @@ class Bitrix24(object):
         """
         url = self._build_oauth_url('token')
         data = request('get', url, params)
-        # TODO: Handle error
         self._access_token = data.get('access_token')
         self._refresh_token = data.get('refresh_token')
         return data
@@ -161,10 +197,15 @@ class Bitrix24(object):
         data = self._request_tokens(kwargs)
         return data
 
+    @deprecated
+    def call_method(self, *args, **kwargs):
+        return self.call(*args, **kwargs)
+
     def call(self, method, params=None):
         """
-        Send a parametrized request to the Bitrix24 REST API endpoint. This
-        method automatically injects an access token to the request.
+        Send a parametrized request to the Bitrix24 REST API endpoint. It's
+        required to obtain an access token with appropriate permissions first.
+        The access token injects automatically to the request.
 
         See more:
         * `Access Permissions for REST Methods
@@ -172,117 +213,137 @@ class Bitrix24(object):
         * `Common REST methods
             <https://training.bitrix24.com/rest_help/general/index.php>`
 
-        :param method: Method name (words separated by dots)
-        :param params: Request parameters
-        :return: Response data
+        :param method: str Method name (words separated by dots)
+        :param params: dict Request parameters
+        :return: dict Response data
         """
         url = self._method_url_template.format(hostname=self.hostname)
-        params = copy_or_create_dict(params)
+        params = params.copy() if params is not None else {}
         params['auth'] = self._access_token
         data = self._call(url, method, params)
         return data
 
     def _call(self, url, method, params):
+        """Send a POST request to a formatted URL."""
         uri = self._call_url_template.format(url=url, method=method)
         data = request('post', uri, params)
         return data
 
     def call_batch(self, calls, halt_on_error=False):
         """
-        Groups many single methods into a request. Can include macros
-        to access the results of the previous calls in the batch. See:
-        https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php
-        :param calls: dict Sub-methods with params
+        Group many calls into a single request. May include macros to reference
+        results of the previous calls.
+
+        See more:
+        * `BX24.callBatch
+            <https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php>`_
+
+        :param calls: dict Call params by method names
         :param halt_on_error: bool Halt on error
-        :return: dict Decoded response text
+        :return: dict Response data
         """
         data = self.call('batch', {
-            'cmd': prepare_batch(copy_or_create_dict(calls)),
+            'cmd': prepare_batch_command(calls),
             'halt': halt_on_error
         })
         return data
 
-    def call_bind(self, event, handler, auth_type=None):
+    @deprecated
+    def call_bind(self, *args, **kwargs):
+        return self.call_event_bind(*args, **kwargs)
+
+    def call_event_bind(self, event, handler, auth_type=None, event_type=None):
         """
-        Installs a new event handler. See:
-        https://training.bitrix24.com/rest_help/general/event_bind.php
+        Install a new event handler.
+
+        See more:
+        * `event.bind
+            <https://training.bitrix24.com/rest_help/general/events_method/event_bind.php>`_
+
         :param event: str Event name
-        :param handler: str Handler URL
+        :param handler: str Event handler URL
         :param auth_type: int User ID
-        :return: dict Decoded response text
+        :param event_type: str 'online' or 'offline'
+        :return: dict Response data
         """
-        data = self.call('event.bind', {
-            'auth_type': auth_type or self.user_id,
+        params = ConditionalDict({
             'event': event,
             'handler': handler
         })
+        params['auth_type'] = auth_type or self.user_id
+        params['event_type'] = event_type
+        data = self.call('event.bind', params)
         return data
 
-    def call_unbind(self, event, handler, auth_type=None):
+    @deprecated
+    def call_unbind(self, *args, **kwargs):
+        return self.call_event_unbind(*args, **kwargs)
+
+    def call_event_unbind(self, event, handler, auth_type=None, event_type=None):
         """
-        Uninstalls a previously installed event handler. See:
-        https://training.bitrix24.com/rest_help/general/event_unbind.php
+        Uninstall an event handler.
+
+        See more:
+        * `event.bind
+            <https://training.bitrix24.com/rest_help/general/events_method/event_unbind.php>`_
+
         :param event: str Event name
         :param handler: str Handler URL
         :param auth_type: int User ID
+        :param event_type: str 'online' or 'offline'
         :return: dict Decoded response text
         """
-        data = self.call('event.unbind', {
-            'auth_type': auth_type or self.user_id,
+        params = ConditionalDict({
             'event': event,
             'handler': handler
         })
+        params['auth_type'] = auth_type or self.user_id
+        params['event_type'] = event_type
+        data = self.call('event.unbind', params)
         return data
 
     def call_webhook(self, method, code, params=None):
         """
-        Call a simplified version of rest-events and rest-teams that does not
-        require a program to write.
-        https://www.bitrix24.com/apps/webhooks.php
-        :param method:
-        :param code:
-        :param params:
-        :return: dict Decoded response text
+        Request a Bitrix24 resources without an access token.
+
+        See more:
+        * `WebHooks
+            <https://training.bitrix24.com/rest_help/rest_sum/webhooks.php>`_
+        * `Telephony Integration Tips
+            <https://www.bitrix24.com/apps/webhooks.php>`_
+
+        :param method: str Method name (words separated by dots)
+        :param code: str WebHook code
+        :param params: dict Request parameters
+        :return: dict Response data
         """
         url = self._webhook_url_template.format(hostname=self.hostname,
                                                 user_id=self.user_id, code=code)
-        data = self._call(url, method, copy_or_create_dict(params))
+        data = self._call(url, method, params)
         return data
 
     def call_batch_webhook(self, calls, code, halt_on_error=False):
         """
-        Groups many single methods into a request. Can include macros
-        to access the results of the previous calls in the batch. See:
-        https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php
-        :param calls: dict Sub-methods with params
-        :param code: webhook unique code
+        Group many calls into a single request. May include macros to reference
+        results of the previous calls. This method is mimics :meth:`call_batch`
+        except adding an access token to the request.
+
+        See more:
+        * `BX24.callBatch
+            <https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php>`_
+
+        :param calls: dict Call params by method names
+        :param code: str WebHook code
         :param halt_on_error: bool Halt on error
-        :return: dict Decoded response text
+        :return: dict Response data
         """
         data = self.call_webhook('batch', code, {
-            'cmd': prepare_batch(copy_or_create_dict(calls)),
+            'cmd': prepare_batch_command(calls),
             'halt': halt_on_error
         })
         return data
 
-    @staticmethod
-    def get_error_if_present(data):
-        if not isinstance(data, dict):
-            raise PBx24ArgumentError("Data must be a dictionary")
-
-        # Try to get an error from a call response
-        error = data.get('error')
-        if error is not None:
-            return error
-
-        # Check if it's a batch response
-        result = data.get('result')
-        if result is None:
-            return None
-
-        # Try to get an error from a batch call response
-        if not isinstance(result, dict):
-            raise PBx24ArgumentError("Data is not a valid response")
-
-        return result.get('result_error')
-
+    @deprecated
+    def get_tokens(self):
+        return {'access_token': self._access_token,
+                'refresh_token': self._refresh_token}

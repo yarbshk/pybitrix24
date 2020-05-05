@@ -8,7 +8,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.wait import WebDriverWait
 
-from pybitrix24 import Bitrix24
+from pybitrix24.bitrix24 import get_error_if_present
 
 try:
     from urllib.parse import urlparse, parse_qs
@@ -83,7 +83,7 @@ class TokenRefresher:
         if self.access_token is None or self.refresh_token is None or \
                 self.are_tokens_expire():
             data = bx24.obtain_tokens(self.obtain_auth_code(bx24))
-            error = Bitrix24.get_error_if_present(data)
+            error = get_error_if_present(data)  # TODO: Call internal method
             if error is not None:
                 raise ValueError("Can't obtain tokens. " + error)
 

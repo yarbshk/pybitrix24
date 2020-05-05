@@ -69,16 +69,16 @@ class Bitrix24EndToEndTests(unittest.TestCase):
 
     def test_binding(self):
         event, handler = 'OnAppUpdate', 'https://example.com/'
-        self._test_call_bind(event, handler)
-        self._test_call_unbind(event, handler)
+        self._test_call_event_bind(event, handler)
+        self._test_call_event_unbind(event, handler)
 
-    def _test_call_bind(self, event, handler):
-        data = self.bx24.call_bind(event, handler)
+    def _test_call_event_bind(self, event, handler):
+        data = self.bx24.call_event_bind(event, handler)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
 
-    def _test_call_unbind(self, event, handler):
-        data = self.bx24.call_unbind(event, handler)
+    def _test_call_event_unbind(self, event, handler):
+        data = self.bx24.call_event_unbind(event, handler)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
 

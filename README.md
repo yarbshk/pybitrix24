@@ -18,7 +18,7 @@ $ pip install pybitrix24
 
 ### Preparation
 
-The current and next sections can be skipped if only webhooks will be used.
+The current section and next one can be skipped if only webhooks will be used.
 
 To start making requests it's necessary to [create an application](https://training.bitrix24.com/rest_help/bitrix24_apps/index.php) in the marketplace first. Then all necessary values (**hostname**, **client ID** and **secret**) will be available: 
 ![Marketplace local list](docs/source/_static/marketplace-local-list.png)
@@ -59,7 +59,7 @@ Congratulations, all the preparatory work is done!
 
 ### Requesting resources with an access token
 
-A further turn for requesting Bitrix24 resources. An access token injects automatically for all methods prefixed with `call_`.
+A further turn for requesting Bitrix24 resources. An access token injects automatically for all methods prefixed with `call_` that are mentioned in this section.
 
 To make a **single call** (the `user` permission is required for the following example):
 
@@ -84,14 +84,14 @@ To make a **batch call** that is a few calls per request (the `user` and `depart
 To **bind an event** (this method calls `event.bind` under the hood):
 
 ```python
->>> bx24.call_bind('OnAppUpdate', 'https://example.com/')
+>>> bx24.call_event_bind('OnAppUpdate', 'https://example.com/')
 {'result': {...}}
 ```
 
 To **unbind an event** (this method calls `event.unbind` under the hood):
 
 ```python
->>> bx24.call_unbind('OnAppUpdate', 'https://example.com/')
+>>> bx24.call_event_unbind('OnAppUpdate', 'https://example.com/')
 {'result': {...}}
 ```
 
