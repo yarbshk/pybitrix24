@@ -21,17 +21,10 @@ def open_url(url, data=None):
 
 
 def request(method, url, params):
-    """
-    :raise Bitrix24Error: If on error while requesting the server.
-    :raise Bitrix24Error: If on error while decoding the response body.
-    :param method:
-    :param url:
-    :param params:
-    :return:
-    """
     if params is None:
         params = {}
 
+    # Encode request data (params) and send a request
     params = urlencode(params)
     if method == 'get':
         response = open_url(url + '?' + params)
@@ -40,6 +33,7 @@ def request(method, url, params):
     else:
         raise PBx24ArgumentError("The HTTP method %s is not supported" % method)
 
+    # Decode response body
     try:
         if sys.version_info.major == 2:
             return json.load(response)

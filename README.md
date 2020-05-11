@@ -20,21 +20,18 @@ $ pip install pybitrix24
 
 The current section and next one can be skipped if only webhooks will be used.
 
-To start making requests it's necessary to [create an application](https://training.bitrix24.com/rest_help/bitrix24_apps/index.php) in the marketplace first. Then all necessary values (**hostname**, **client ID** and **secret**) will be available: 
-![Marketplace local list](docs/source/_static/marketplace-local-list.png)
- 
-Create an instance of the main class with the minimum required configuration with **hostname**, **client ID** and **secret** arguments (hereafter placeholders prefixed with "my" will be used instead of real values for simplicity):
+To start making requests it's necessary to [create an application](https://training.bitrix24.com/rest_help/bitrix24_apps/index.php) in the marketplace first. Then create an instance of the main class with the minimum required configuration that contains **hostname**, **client ID** and **secret** arguments (hereafter placeholders prefixed with "my" will be used instead of real values):
 
 ```python
 >>> from pybitrix24 import Bitrix24
 >>> bx24 = Bitrix24('my-subdomain.bitrix24.com', 'my.client.id', 'MyClientSecret')
 ```
 
-It's time to authorize.
+Now is the time to authorize.
 
 Bitrix24 uses [OAuth2](https://training.bitrix24.com/rest_help/oauth/authentication.php) and [authorization code grant](https://tools.ietf.org/html/rfc6749#section-1.3.1) for authorization of applications. It means that account owner's credentials are hidden from developers for security reasons, therefore, **it's not possible to obtain authorization code programmatically**. The account owner should be always present when access is granted.
 
-To make life a bit simpler there is a helper method that builds an authorization URL for requesting an authorization code:
+However, to make life a bit simpler there is a helper method that builds an authorization URL for requesting an authorization code:
 
 ```python
 >>> bx24.build_authorization_url()
@@ -109,16 +106,19 @@ If only webhooks are used the minimum required configuration is as simple as the
 To make an **inbound webhook** call:
 
 ```python
->>> bx24.call_webhook('profile', 'xxxxxxxxxxxxxxxx')
+>>> bx24.call_webhook('xxxxxxxxxxxxxxxx', 'user.get', {'ID': 1})
 {'result': {...}}
 ```
 
 To make a batch call of **inbound webhooks**:
 
 ```python
-    # You can pass a dict of params as third argument
->>> bx24.call_batch_webhook({
-...     'profile': 'xxxxxxxxxxxxxxxx',
+>>> bx24.call_batch_webhook('xxxxxxxxxxxxxxxx', {
+...     'get_user': ('user.current', {}), # or 'user.current'
+...     'get_department': {
+...         'method': 'department.get',
+...         'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
+...     }
 ... })
 {'result': {'result': {...}}}
 ```
@@ -128,4 +128,4 @@ That's the end of the quick introduction. Thanks!
 For more details, please, [explore source code](pybitrix24/bitrix24.py) or [ask me](https://github.com/yarbshk/pybitrix24/issues/new). Good luck!
 
 ## Copyright and License
-Copyright © 2017 Yurii Rabeshko. Code released under the MIT license.
+Copyright © 2017-2020 Yurii Rabeshko. Code released under the MIT license.

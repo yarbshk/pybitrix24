@@ -1,4 +1,3 @@
-from .deprecation import deprecated
 from .exceptions import PBx24AttributeError, PBx24ArgumentError
 from .requester import encode_url, request, prepare_batch_command
 
@@ -36,9 +35,8 @@ class ConditionalDict(dict):
 
 class Bitrix24(object):
     """
-    The main requester of Bitrix24 REST API. Under the hood it uses Requests
-    (HTTP library) and acts as its wrapper with several methods of quick
-    access and advanced URL encoding features. The wrapper supports obtaining
+    The main caller of Bitrix24 REST API. The caller has several methods
+    of quick access and advanced URL encoding features. It supports obtaining
     and refreshing tokens and automatic injecting of access token for each
     request and helps in obtaining the authorization code grand.
     """
@@ -54,7 +52,7 @@ class Bitrix24(object):
                  user_id=None):
         """
         Initialize object attributes. Note that the application ID and key
-        arguments are not required only if webhooks will be called.
+        arguments are not required if webhooks will be called only.
 
         :raise Bx24ArgumentError: If hostname is not set
         :param hostname: A root URL without a protocol and an ending slash of
@@ -72,14 +70,9 @@ class Bitrix24(object):
         self._access_token = None
         self._refresh_token = None
 
-    @deprecated('"resolve_authorize_endpoint" is deprecated use '
-                '"build_authorization_url" instead')
-    def resolve_authorize_endpoint(self, **kwargs):
-        return self.build_authorization_url(**kwargs)
-
     def build_authorization_url(self, **kwargs):
         """
-        Generate a URL for requesting an authorization code grant via browser.
+        Generate a URL for requesting an authorization code via browser.
 
         See more:
         * `Authorization Code Grant
@@ -106,12 +99,6 @@ class Bitrix24(object):
         return url
 
     def _build_oauth_url(self, action, params=None):
-        """
-        Builds an OAuth URL with/out query parameters.
-        :param action: str Action name of an OAuth endpoint
-        :param params: dict Query parameters
-        :return: str OAuth endpoint
-        """
         if self.client_id is None:
             raise PBx24AttributeError("The 'hostname' attribute is required")
         url = self._auth_url_template.format(hostname=self.hostname, action=action)
@@ -119,10 +106,6 @@ class Bitrix24(object):
             url += '?' + encode_url(params)
 
         return url
-
-    @deprecated('"request_tokens" is deprecated use "obtain_tokens" instead')
-    def request_tokens(self, *args, **kwargs):
-        return self.obtain_tokens(*args, **kwargs)
 
     def obtain_tokens(self, code, **kwargs):
         """
@@ -152,17 +135,10 @@ class Bitrix24(object):
             'code': code,
             'grant_type': 'authorization_code'
         })
-        if 'scope' not in kwargs:  # TODO: Check if scope parameter is optional
-            kwargs['scope'] = ''
         data = self._request_tokens(kwargs)
         return data
 
     def _request_tokens(self, params):
-        """
-        The request handler of an OAuth tokens endpoint.
-        :param params: dict Query parameters
-        :return: dict Encoded response text
-        """
         url = self._build_oauth_url('token')
         data = request('get', url, params)
         self._access_token = data.get('access_token')
@@ -198,10 +174,6 @@ class Bitrix24(object):
         data = self._request_tokens(kwargs)
         return data
 
-    @deprecated('"call_method" is deprecated use "call" instead')
-    def call_method(self, *args, **kwargs):
-        return self.call(*args, **kwargs)
-
     def call(self, method, params=None):
         """
         Send a parametrized request to the Bitrix24 REST API endpoint. It's
@@ -225,7 +197,6 @@ class Bitrix24(object):
         return data
 
     def _call(self, url, method, params):
-        """Send a POST request to a formatted URL."""
         uri = self._call_url_template.format(url=url, method=method)
         data = request('post', uri, params)
         return data
@@ -248,10 +219,6 @@ class Bitrix24(object):
             'halt': halt_on_error
         })
         return data
-
-    @deprecated('"call_bind" is deprecated use "call_event_bind" instead')
-    def call_bind(self, *args, **kwargs):
-        return self.call_event_bind(*args, **kwargs)
 
     def call_event_bind(self, event, handler, auth_type=None, event_type=None):
         """
@@ -276,10 +243,6 @@ class Bitrix24(object):
         data = self.call('event.bind', params)
         return data
 
-    @deprecated('"call_unbind" is deprecated use "call_event_unbind" instead')
-    def call_unbind(self, *args, **kwargs):
-        return self.call_event_unbind(*args, **kwargs)
-
     def call_event_unbind(self, event, handler, auth_type=None, event_type=None):
         """
         Uninstall an event handler.
@@ -303,7 +266,7 @@ class Bitrix24(object):
         data = self.call('event.unbind', params)
         return data
 
-    def call_webhook(self, method, code, params=None):
+    def call_webhook(self, code, method, params=None):
         """
         Request a Bitrix24 resources without an access token.
 
@@ -313,8 +276,8 @@ class Bitrix24(object):
         * `Telephony Integration Tips
             <https://www.bitrix24.com/apps/webhooks.php>`_
 
-        :param method: str Method name (words separated by dots)
         :param code: str WebHook code
+        :param method: str Method name (words separated by dots)
         :param params: dict Request parameters
         :return: dict Response data
         """
@@ -323,7 +286,7 @@ class Bitrix24(object):
         data = self._call(url, method, params)
         return data
 
-    def call_batch_webhook(self, calls, code, halt_on_error=False):
+    def call_batch_webhook(self, code, calls, halt_on_error=False):
         """
         Group many calls into a single request. May include macros to reference
         results of the previous calls. This method is mimics :meth:`call_batch`
@@ -333,8 +296,8 @@ class Bitrix24(object):
         * `BX24.callBatch
             <https://training.bitrix24.com/rest_help/js_library/rest/callBatch.php>`_
 
-        :param calls: dict Call params by method names
         :param code: str WebHook code
+        :param calls: dict Call params by method names
         :param halt_on_error: bool Halt on error
         :return: dict Response data
         """
@@ -343,8 +306,3 @@ class Bitrix24(object):
             'halt': halt_on_error
         })
         return data
-
-    @deprecated('"get_tokens" is deprecated')
-    def get_tokens(self):
-        return {'access_token': self._access_token,
-                'refresh_token': self._refresh_token}

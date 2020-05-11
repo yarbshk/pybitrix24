@@ -13,7 +13,7 @@ setup(
     long_description=long_description,
     long_description_content_type='text/markdown',
     description='The simplest zero dependency polyversion Python library for Bitrix24 REST API.',
-    keywords='bitrix24 rest api client sdk',
+    keywords='bitrix24 rest api client sdk library',
     version='1.0.0',
     url='https://github.com/yarbshk/pybitrix24',
     author='Yurii Rabeshko',

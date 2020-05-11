@@ -1,5 +1,4 @@
 class PyBitrix24Error(Exception):
-    """Base class for exceptions that are thrown explicitly."""
     pass
 
 

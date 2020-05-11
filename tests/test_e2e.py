@@ -83,7 +83,9 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         self.assertNotIn('error', data)
 
     def test_call_webhook(self):
-        data = self.bx24.call_webhook('profile', self.webhook_code)
+        params = {'ID': self.bx24.user_id}
+        data = self.bx24.call_webhook(self.webhook_code, 'user.get',
+                                      params=params)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
 
@@ -96,7 +98,7 @@ class Bitrix24EndToEndTests(unittest.TestCase):
                 'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
             }
         }
-        data = bx24hook.call_batch_webhook(calls, self.webhook_code, True)
+        data = bx24hook.call_batch_webhook(self.webhook_code, calls, True)
         self.assertIsInstance(data, dict)
         self.assertNotEqual(data['result'], {})
         self.assertListEqual(data['result']['result_error'], [])
