@@ -26,7 +26,7 @@ def get_error_if_present(data):
 
 class ConditionalDict(dict):
     def __init__(self, seq=None, cond=lambda x: x is not None):
-        super().__init__(seq)
+        super(ConditionalDict, self).__init__(seq)
         self.cond = cond
 
     def __setitem__(self, key, value):
@@ -72,7 +72,8 @@ class Bitrix24(object):
         self._access_token = None
         self._refresh_token = None
 
-    @deprecated
+    @deprecated('"resolve_authorize_endpoint" is deprecated use '
+                '"build_authorization_url" instead')
     def resolve_authorize_endpoint(self, **kwargs):
         return self.build_authorization_url(**kwargs)
 
@@ -119,7 +120,7 @@ class Bitrix24(object):
 
         return url
 
-    @deprecated
+    @deprecated('"request_tokens" is deprecated use "obtain_tokens" instead')
     def request_tokens(self, *args, **kwargs):
         return self.obtain_tokens(*args, **kwargs)
 
@@ -197,7 +198,7 @@ class Bitrix24(object):
         data = self._request_tokens(kwargs)
         return data
 
-    @deprecated
+    @deprecated('"call_method" is deprecated use "call" instead')
     def call_method(self, *args, **kwargs):
         return self.call(*args, **kwargs)
 
@@ -248,7 +249,7 @@ class Bitrix24(object):
         })
         return data
 
-    @deprecated
+    @deprecated('"call_bind" is deprecated use "call_event_bind" instead')
     def call_bind(self, *args, **kwargs):
         return self.call_event_bind(*args, **kwargs)
 
@@ -275,7 +276,7 @@ class Bitrix24(object):
         data = self.call('event.bind', params)
         return data
 
-    @deprecated
+    @deprecated('"call_unbind" is deprecated use "call_event_unbind" instead')
     def call_unbind(self, *args, **kwargs):
         return self.call_event_unbind(*args, **kwargs)
 
@@ -343,7 +344,7 @@ class Bitrix24(object):
         })
         return data
 
-    @deprecated
+    @deprecated('"get_tokens" is deprecated')
     def get_tokens(self):
         return {'access_token': self._access_token,
                 'refresh_token': self._refresh_token}

@@ -29,6 +29,9 @@ def request(method, url, params):
     :param params:
     :return:
     """
+    if params is None:
+        params = {}
+
     params = urlencode(params)
     if method == 'get':
         response = open_url(url + '?' + params)

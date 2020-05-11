@@ -8,13 +8,6 @@ def is_url(s):
     return re.match(r"^http(s)?://[\w\-./#?=&]+", s)
 
 
-def rethrow_error(method):
-    try:
-        method()
-    except Exception as e:
-        raise e
-
-
 class Bitrix24UnitTests(unittest.TestCase):
     hostname = 'test.bitrix24.com'
     client_id = 'test.eMfQDE5VAglQKz.65790983'
