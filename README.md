@@ -1,72 +1,73 @@
-# bitrix24-python3-client
-A tiny Python3 client to make requests of Bitrix24 API.
+# pybitrix24
+The simplest zero dependency polyversion Python library for Bitrix24 REST API.
 
-## Requirements
-Depends on the following packages (see `requirements.txt`):
-- requests
+## Features
+- **Polyversion.** Supported Python versions: 2.7, 3.5+.
+- **Zero dependency.** It's fast, lightweight and secure.
+- **Reliable.** Test coverage is more than 80%.
+- **Just simple.** Examples of usage and clear sources.
 
 ## Installation
-First of all install necessary dependencies (see above) and **bitrix24-python3-client** itself:
+Install using [pip](https://pip.pypa.io/en/stable/):
 
 ```bash
-$ pip install bitrix24-python3-client
+$ pip install pybitrix24
 ```
 
 ## Getting started
 
-The client is tiny therefore it's **easy to use**. All what you need to start it's **domain name**, **client ID** and **client secret key** of your application (if you already have **access** and **refresh tokens** you can pass it as optional kwargs into the Bitrix24 client).  
+### Preparation
 
-First of all you need to **create Bitrix24 instance** to work with. Let's create it as follows (we will consider basic configuration without existing tokens):
+The current section and next one can be skipped if only webhooks will be used.
+
+To start making requests it's necessary to [create an application](https://training.bitrix24.com/rest_help/bitrix24_apps/index.php) in the marketplace first. Then create an instance of the main class with the minimum required configuration that contains **hostname**, **client ID** and **secret** arguments (hereafter placeholders prefixed with "my" will be used instead of real values):
 
 ```python
-    # Import Bitrix24 client to work with
->>> from bitrix24 import Bitrix24
-    # Create instance with basic configuration
->>> bx24 = Bitrix24('your-domain.bitrix24.com', 'your.client.id', 'your_client_secret')
+>>> from pybitrix24 import Bitrix24
+>>> bx24 = Bitrix24('my-subdomain.bitrix24.com', 'my.client.id', 'MyClientSecret')
 ```
 
-Looks like not bad, but you can't do anything yet. You must fill out all required attributes of the Bitrix24 client. To do that we can **request it** directly from a Bitrix24 server (**or** pass as optional kwargs for the Bitrix24 client before creating an instance):  
+Now is the time to authorize.
+
+Bitrix24 uses [OAuth2](https://training.bitrix24.com/rest_help/oauth/authentication.php) and [authorization code grant](https://tools.ietf.org/html/rfc6749#section-1.3.1) for authorization of applications. It means that account owner's credentials are hidden from developers for security reasons, therefore, **it's not possible to obtain authorization code programmatically**. The account owner should be always present when access is granted.
+
+However, to make life a bit simpler there is a helper method that builds an authorization URL for requesting an authorization code:
 
 ```python
-    # Get authorization URL to request authorization code via browser
->>> bx24.resolve_authorize_endpoint()
-'https://your-domain.bitrix24.com/oauth/authorize/?client_id=your.client.id&response_type=code'
-    # Request tokens to interact with Bitrix24 API
->>> bx24.request_tokens('requested_authorization_code')
+>>> bx24.build_authorization_url()
+'https://my-subdomain.bitrix24.com/oauth/authorize/?client_id=my.client.id&response_type=code'
 ```
 
-You can **check if all's well** by following command which simply return dict of current tokens:
+Finally, when an authorization code is received both [access](https://tools.ietf.org/html/rfc6749#section-1.4) and [refresh tokens](https://tools.ietf.org/html/rfc6749#section-1.5) can be obtained: 
 
 ```python
-    # Get current access and refresh tokens
->>> bx24.get_tokens()
-{'access_token': 'requested_access_token', 'refresh_token': 'requested_refresh_token'}
+>>> bx24.obtain_tokens('AnAuthorizationCode')
+{'access_token': 'AnAccessToken', 'refresh_token': 'ARefreshToken', ...}
 ```
 
-**Pay attention!** Your tokens have 1 hour lifecycle by default therefore you may need to **refresh tokens** at the expiration of this time:
+As it was mentioned earlier it's not possible to get the authorization code automatically but it's possible to refresh tokens after initial receiving to make the session longer (note that both **tokens have 1 hour lifetime** after that they'll be expired and an authorization code must be granted again):
 
 ```python
-    # Refresh current tokens (refresh token required)
 >>> bx24.refresh_tokens()
-    # Check whether old tokens was replaced
->>> bx24.get_tokens()
-{'access_token': 'new_access_token', 'refresh_token': 'new_refresh_token'}
+{'access_token': 'ANewAccessToken', 'refresh_token': 'ANewRefreshToken', ...}
 ```
 
-Okay, all the preparation works done and now we can **make API calls to a Bitrix24 server** (don't forget to check the `client_endpoint` attribute of the Bitrix24 client whether it exists).
+Congratulations, all the preparatory work is done!
 
-Make a **single call**:
+### Requesting resources with an access token
+
+A further turn for requesting Bitrix24 resources. An access token injects automatically for all methods prefixed with `call_` that are mentioned in this section.
+
+To make a **single call** (this example requires the following permissions: `user`):
 
 ```python
-    # The following example needs the `user` permission
->>> bx24.call_method('user.get', {'ID': 1})
+>>> bx24.call('user.get', {'ID': 1})
 {'result': {...}}
 ```
 
-Make a **batch call** (many single calls by one request):
+To make a **batch call** that is a few calls per request (this example requires the following permissions: `user,department`):
 
 ```python
-    # The following example needs the `user` and `department` permissions
 >>> bx24.call_batch({
 ...     'get_user': ('user.current', {}), # or 'user.current'
 ...     'get_department': {
@@ -77,50 +78,54 @@ Make a **batch call** (many single calls by one request):
 {'result': {'result': {...}}}
 ```
 
-Make an **event binding** (shortcut for the `event.bind` method):
+To **bind an event** (this method calls `event.bind` under the hood):
 
 ```python
->>> bx24.call_bind('OnAppUpdate', 'https://example.com/')
+>>> bx24.call_event_bind('OnAppUpdate', 'https://example.com/')
 {'result': {...}}
 ```
 
-Make an **event unbinding** (shortcut for the `event.unbind` method):
+To **unbind an event** (this method calls `event.unbind` under the hood):
 
 ```python
->>> bx24.call_unbind('OnAppUpdate', 'https://example.com/')
+>>> bx24.call_event_unbind('OnAppUpdate', 'https://example.com/')
 {'result': {...}}
 ```
 
-#### Get closer to webhooks
+### Requesting resources with a webhook code
 
-All methods described above come in handy when you develop applications or similar tricky things. However, sometimes will be enough to call a **webhook** - simplified version of rest-events and rest-teams that does not require a application to write.
+Requesting resources with an authorization code is suitable for development of 3rd-party applications that are often quite cumbersome. However, sometimes it's enough to send a few simple calls. This is where webhooks come to action. 
 
-So, let's create a simple webhook!
-
-If you need to make webhook calls **only**, the following configuration will fit (in other case see verbose configuration above):
+If only webhooks are used the minimum required configuration is as simple as the following:
 
 ```python
-    # Import Bitrix24 client to work with
->>> from bitrix24 import Bitrix24
-    # Create instance with basic configuration
->>> bx24 = Bitrix24('your-domain.bitrix24.com', user_id=1)
+>>> from pybitrix24 import Bitrix24
+>>> bx24 = Bitrix24('my-subdomain.bitrix24.com')
 ```
 
-Make a **webhook call**:
+To make an **inbound webhook** call (this example requires the following permissions: `user`):
 
 ```python
-    # You can pass a dict of params as third argument
->>> bx24.call_webhook('profile', 'xxxxxxxxxxxxxxxx')
+>>> bx24.call_webhook('xxxxxxxxxxxxxxxx', 'user.get', {'ID': 1})
 {'result': {...}}
 ```
 
+To make a batch call of **inbound webhooks** (this example requires the following permissions: `user,department`):
 
-That's end of quick introduction. To learn details, **explore source code** (believe me those code is such simple as this client). Good luck!
+```python
+>>> bx24.call_batch_webhook('xxxxxxxxxxxxxxxx', {
+...     'get_user': ('user.current', {}), # or 'user.current'
+...     'get_department': {
+...         'method': 'department.get',
+...         'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
+...     }
+... })
+{'result': {'result': {...}}}
+```
 
-## Status
-The client is already ready to use (v0.3.3).
+That's the end of the quick introduction. Thanks!
 
-I'll probably add more functionality later. This is what I need right now.
+For more details, please, [explore source code](pybitrix24/bitrix24.py) or [ask me](https://github.com/yarbshk/pybitrix24/issues/new). Good luck!
 
 ## Copyright and License
-Copyright (c) 2017-2019 Yuriy Rabeshko. Code released under the MIT license.
+Copyright © 2017-2020 Yurii Rabeshko. Code released under the MIT license.

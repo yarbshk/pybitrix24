@@ -1,14 +1,41 @@
 import json
-
-from bitrix24 import exceptions
-# from urllib.parse import urlencode
-
-try:
-    from urllib.parse import urlencode as urllib_urlencode
-except ImportError:
-    from urllib import urlencode as urllib_urlencode
+import sys
 
 from collections import OrderedDict
+
+from .exceptions import PBx24RequestError, PyBitrix24Error
+
+try:
+    from urllib.request import Request, urlopen
+    from urllib.parse import urlencode
+except ImportError:
+    from urllib2 import Request, urlopen
+    from urllib import urlencode
+
+
+def request(url, query=None, data=None):
+    if query:
+        url += '?' + urlencode(query)
+
+    if data:
+        data = json.dumps(data).encode('utf-8')
+
+    # Make a request
+    req = Request(url, data=data,
+                  headers={'Content-Type': 'application/json'})
+    try:
+        resp = urlopen(req)
+    except Exception as e:
+        raise PBx24RequestError("Error on request", e)
+
+    # Decode response body
+    try:
+        if sys.version_info.major == 2:
+            return json.load(resp)
+        else:
+            return json.loads(resp.read().decode('utf-8'))
+    except Exception as e:
+        raise PyBitrix24Error("Error decoding of server response", e)
 
 
 def flatten(d):
@@ -27,7 +54,6 @@ def flatten(d):
     >>> flatten({"a": {"b": "c", "d": "e"}, "b": {"c": "d"}})
     [['a', 'b', 'c'], ['a', 'd', 'e'], ['b', 'c', 'd']]
     """
-
     if not isinstance(d, dict):
         return [[d]]
 
@@ -59,7 +85,7 @@ def parametrize(params):
     return returned
 
 
-def urlencode(params):
+def encode_url(params):
     """Urlencode a multidimensional dict."""
 
     # Not doing duck typing here. Will make debugging easier.
@@ -78,37 +104,35 @@ def urlencode(params):
 
         url_params[name] = value
 
-    return urllib_urlencode(url_params, doseq=True)
-
-def resolve_response(response):
-    try:
-        result = json.loads(response.text)
-    except AttributeError:
-        result = None
-    except TypeError:
-        result = None
-    return result
+    return urlencode(url_params, doseq=True)
 
 
-def prepare_batch(calls):
+def prepare_batch_command(calls):
     commands = {}
     for name, call in calls.items():
         if isinstance(call, str):
             command = call
         elif isinstance(call, tuple):
             try:
-                command = '{}?{}'.format(call[0], urlencode(call[1]))
-            except IndexError:
-                raise exceptions.BatchIndexError(name)
+                command = '{}?{}'.format(call[0], encode_url(call[1]))
+            except IndexError as e:
+                raise PyBitrix24Error(
+                    'The "' + name + '" call must be a pair of values', e)
         elif isinstance(call, dict):
             try:
-                command = '{}?{}'.format(call['method'], urlencode(call['params']))
-            except KeyError:
-                raise exceptions.BatchKeyError(name)
+                command = '{}?{}'.format(call['method'],
+                                         encode_url(call['params']))
+            except KeyError as e:
+                raise PyBitrix24Error(
+                    'The "' + name + '" call has the following required '
+                                     'keys: method, params.', e)
         else:
             if isinstance(call, list):
-                raise exceptions.BatchInstanceError(name, [tuple])
+                raise PyBitrix24Error(
+                    'The "' + name + '" call must be a tuple')
             else:
-                raise exceptions.BatchInstanceError(name, [str, tuple, dict])
+                raise PyBitrix24Error(
+                    'The "' + name + '" call must be a string, a tuple or '
+                                     'a dictionary.')
         commands[name] = command
     return commands

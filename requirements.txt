@@ -1,9 +1,6 @@
-certifi==2017.7.27.1
-chardet==3.0.4
-idna==2.5
-pkginfo==1.4.1
-requests==2.18.0
-requests-toolbelt==0.8.0
-tqdm==4.19.1.post1
-twine==1.9.1
-urllib3==1.21.1
+tox
+setuptools
+wheel
+twine
+sphinx
+selenium
