@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from pybitrix24 import Bitrix24
+from pybitrix24 import Bitrix24, PBx24RequestError
 from tests.automation import TokenRefresher
 
 
@@ -16,12 +16,13 @@ class Bitrix24EndToEndTests(unittest.TestCase):
     hostname = require_env_var('TEST_HOSTNAME')
     client_id = require_env_var('TEST_CLIENT_ID')
     client_secret = require_env_var('TEST_CLIENT_SECRET')
-    user_id = os.environ.get('TEST_USER_ID', 1)
+    user_id = int(os.environ.get('TEST_USER_ID', 1))
 
     webhook_code = require_env_var('TEST_WEBHOOK_CODE')
 
     token_refresher = TokenRefresher(require_env_var('TEST_USER_LOGIN'),
-                                     require_env_var('TEST_USER_PASSWORD'))
+                                     require_env_var('TEST_USER_PASSWORD'),
+                                     scope='user,department')
 
     def setUp(self):
         self.bx24 = Bitrix24(self.hostname, client_id=self.client_id,
@@ -53,6 +54,7 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         data = self.bx24.call('user.get', params=params)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
+        self.assertNotEqual(data['result'], [])
 
     def test_call_batch(self):
         calls = {
@@ -64,23 +66,30 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         }
         data = self.bx24.call_batch(calls, True)
         self.assertIsInstance(data, dict)
-        self.assertNotEqual(data['result'], {})
+        self.assertNotEqual(data['result']['result'], {})
         self.assertListEqual(data['result']['result_error'], [])
 
-    def test_binding(self):
+    def test_event_binding(self):
         event, handler = 'OnAppUpdate', 'https://example.com/'
-        self._test_call_event_bind(event, handler)
-        self._test_call_event_unbind(event, handler)
+        try:
+            self._test_call_event_bind(event, handler)
+        except PBx24RequestError:
+            self._test_call_event_unbind(event, handler)
+            self.test_event_binding()
+        else:
+            self._test_call_event_unbind(event, handler)
 
     def _test_call_event_bind(self, event, handler):
         data = self.bx24.call_event_bind(event, handler)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
+        self.assertEqual(data['result'], True)
 
     def _test_call_event_unbind(self, event, handler):
         data = self.bx24.call_event_unbind(event, handler)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
+        self.assertNotEqual(data['result'], {'count': 0})
 
     def test_call_webhook(self):
         params = {'ID': self.bx24.user_id}
@@ -88,6 +97,7 @@ class Bitrix24EndToEndTests(unittest.TestCase):
                                       params=params)
         self.assertIsInstance(data, dict)
         self.assertNotIn('error', data)
+        self.assertNotEqual(data['result'], [])
 
     def test_call_batch_webhook(self):
         bx24hook = Bitrix24(self.hostname, user_id=1)
@@ -100,5 +110,5 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         }
         data = bx24hook.call_batch_webhook(self.webhook_code, calls, True)
         self.assertIsInstance(data, dict)
-        self.assertNotEqual(data['result'], {})
+        self.assertNotEqual(data['result']['result'], {})
         self.assertListEqual(data['result']['result_error'], [])

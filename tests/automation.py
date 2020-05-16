@@ -72,17 +72,19 @@ class UnsafeAuthCodeProvider:
 
 
 class TokenRefresher:
-    def __init__(self, user_login, user_password):
+    def __init__(self, user_login, user_password, scope=''):
         self.user_login = user_login
         self.user_password = user_password
         self.tokens_updated_at = None
         self.access_token = None
         self.refresh_token = None
+        self.scope = scope
 
     def update_tokens(self, bx24):
         if self.access_token is None or self.refresh_token is None or \
                 self.are_tokens_expire():
-            data = bx24.obtain_tokens(self.obtain_auth_code(bx24))
+            data = bx24.obtain_tokens(self.obtain_auth_code(bx24),
+                                      scope=self.scope)
             error = get_error_if_present(data)  # TODO: Call internal method
             if error is not None:
                 raise ValueError("Can't obtain tokens. " + error)

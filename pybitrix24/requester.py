@@ -3,42 +3,37 @@ import sys
 
 from collections import OrderedDict
 
-from .exceptions import PBx24RequestError, PyBitrix24Error, PBx24ArgumentError
+from .exceptions import PBx24RequestError, PyBitrix24Error
 
 try:
-    from urllib.request import urlopen
+    from urllib.request import Request, urlopen
     from urllib.parse import urlencode
 except ImportError:
-    from urllib import urlopen
+    from urllib2 import Request, urlopen
     from urllib import urlencode
 
 
-def open_url(url, data=None):
+def request(url, query=None, data=None):
+    if query:
+        url += '?' + urlencode(query)
+
+    if data:
+        data = json.dumps(data).encode('utf-8')
+
+    # Make a request
+    req = Request(url, data=data,
+                  headers={'Content-Type': 'application/json'})
     try:
-        return urlopen(url, data)
+        resp = urlopen(req)
     except Exception as e:
-        raise PBx24RequestError("Error getting authorization grant", e)
-
-
-def request(method, url, params):
-    if params is None:
-        params = {}
-
-    # Encode request data (params) and send a request
-    params = urlencode(params)
-    if method == 'get':
-        response = open_url(url + '?' + params)
-    elif method == 'post':
-        response = open_url(url, params.encode('utf-8'))
-    else:
-        raise PBx24ArgumentError("The HTTP method %s is not supported" % method)
+        raise PBx24RequestError("Error on request", e)
 
     # Decode response body
     try:
         if sys.version_info.major == 2:
-            return json.load(response)
+            return json.load(resp)
         else:
-            return json.loads(response.read().decode('utf-8'))
+            return json.loads(resp.read().decode('utf-8'))
     except Exception as e:
         raise PyBitrix24Error("Error decoding of server response", e)
 

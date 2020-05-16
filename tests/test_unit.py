@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from pybitrix24 import Bitrix24, PBx24AttributeError
+from pybitrix24 import Bitrix24, PBx24AttributeError, get_error_if_present
 
 
 def is_url(s):
@@ -30,3 +30,16 @@ class Bitrix24UnitTests(unittest.TestCase):
         self.assertTrue('client_id=%s' % self.bx24.client_id in url)
         self.assertTrue('response_type=code' in url)
         self.assertTrue('test_key=test_value' in url)
+
+    def test_get_error_if_present__call(self):
+        test_data = [
+            {'data': {}, 'error': None},
+            {'data': {'error': 'Error message'}, 'error': 'Error message'},
+            {'data': {'result': {}}, 'error': None},
+            {'data': {'result': {'result_error': 'Error message'}},
+             'error': 'Error message'},
+        ]
+
+        for td in test_data:
+            error = get_error_if_present(td['data'])
+            self.assertEqual(error, td['error'])

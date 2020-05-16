@@ -4,7 +4,7 @@ The simplest zero dependency polyversion Python library for Bitrix24 REST API.
 ## Features
 - **Polyversion.** Supported Python versions: 2.7, 3.5+.
 - **Zero dependency.** It's fast, lightweight and secure.
-- **Reliable.** 85% test coverage.
+- **Reliable.** Test coverage is more than 80%.
 - **Just simple.** Examples of usage and clear sources.
 
 ## Installation
@@ -58,14 +58,14 @@ Congratulations, all the preparatory work is done!
 
 A further turn for requesting Bitrix24 resources. An access token injects automatically for all methods prefixed with `call_` that are mentioned in this section.
 
-To make a **single call** (the `user` permission is required for the following example):
+To make a **single call** (this example requires the following permissions: `user`):
 
 ```python
 >>> bx24.call('user.get', {'ID': 1})
 {'result': {...}}
 ```
 
-To make a **batch call** that is a few calls per request (the `user` and `department` permissions are required for the following example):
+To make a **batch call** that is a few calls per request (this example requires the following permissions: `user,department`):
 
 ```python
 >>> bx24.call_batch({
@@ -103,14 +103,14 @@ If only webhooks are used the minimum required configuration is as simple as the
 >>> bx24 = Bitrix24('my-subdomain.bitrix24.com')
 ```
 
-To make an **inbound webhook** call:
+To make an **inbound webhook** call (this example requires the following permissions: `user`):
 
 ```python
 >>> bx24.call_webhook('xxxxxxxxxxxxxxxx', 'user.get', {'ID': 1})
 {'result': {...}}
 ```
 
-To make a batch call of **inbound webhooks**:
+To make a batch call of **inbound webhooks** (this example requires the following permissions: `user,department`):
 
 ```python
 >>> bx24.call_batch_webhook('xxxxxxxxxxxxxxxx', {

@@ -55,11 +55,11 @@ class Bitrix24(object):
         arguments are not required if webhooks will be called only.
 
         :raise Bx24ArgumentError: If hostname is not set
-        :param hostname: A root URL without a protocol and an ending slash of
+        :param hostname: str A root URL without a protocol and an ending slash of
             the Bitrix24 account (e.g. b24-60jyw6.bitrix24.com)
-        :param client_id: Application ID
-        :param client_secret: Application key
-        :param user_id: A numeric ID of the user (used by webhooks)
+        :param client_id: str Application ID
+        :param client_secret: str Application key
+        :param user_id: int A numeric ID of the user (used by webhooks)
         """
         if hostname is None:
             raise PBx24ArgumentError("The 'hostname' argument is required")
@@ -84,10 +84,9 @@ class Bitrix24(object):
         * `Authentication for Mobile and Desktop Applications
             <https://training.bitrix24.com/rest_help/oauth/app_authentication.php>`_
 
-        :raise Bx24AttributeError: If :attr:`hostname` or :attr:`client_id`
-            is not set. They should be provided during object initialization.
-        :param kwargs: Optional query parameters
-        :return: An absolute URL
+        :raise Bx24AttributeError: If :attr:`client_id` is not set
+        :param kwargs: dict Optional query parameters
+        :return: str An absolute URL
         """
         if self.client_id is None:
             raise PBx24AttributeError("The 'client_id' attribute is required")
@@ -95,15 +94,15 @@ class Bitrix24(object):
             'client_id': self.client_id,
             'response_type': 'code'
         })
-        url = self._build_oauth_url('authorize', params=kwargs)
+        url = self._build_oauth_url('authorize', query=kwargs)
         return url
 
-    def _build_oauth_url(self, action, params=None):
-        if self.client_id is None:
+    def _build_oauth_url(self, action, query=None):
+        if self.hostname is None:
             raise PBx24AttributeError("The 'hostname' attribute is required")
         url = self._auth_url_template.format(hostname=self.hostname, action=action)
-        if params is not None:
-            url += '?' + encode_url(params)
+        if query is not None:
+            url += '?' + encode_url(query)
 
         return url
 
@@ -125,9 +124,9 @@ class Bitrix24(object):
         * `Authentication for Mobile and Desktop Applications
             <https://training.bitrix24.com/rest_help/oauth/app_authentication.php>`_
 
-        :param code: Authorization code
-        :param kwargs: Optional query parameters
-        :return: Response data containing tokens
+        :param code: str Authorization code
+        :param kwargs: dict Optional query parameters
+        :return: dict Response data containing tokens
         """
         kwargs.update({
             'client_id': self.client_id,
@@ -138,9 +137,9 @@ class Bitrix24(object):
         data = self._request_tokens(kwargs)
         return data
 
-    def _request_tokens(self, params):
+    def _request_tokens(self, query):
         url = self._build_oauth_url('token')
-        data = request('get', url, params)
+        data = request(url, query=query)
         self._access_token = data.get('access_token')
         self._refresh_token = data.get('refresh_token')
         return data
@@ -162,8 +161,8 @@ class Bitrix24(object):
         * `Refreshing Authorization For External Applications
             <https://training.bitrix24.com/rest_help/oauth/refreshing.php>`_
 
-        :param kwargs: Optional query parameters
-        :return: Response data containing tokens
+        :param kwargs: dict Optional query parameters
+        :return: dict Response data containing tokens
         """
         kwargs.update({
             'client_id': self.client_id,
@@ -191,14 +190,12 @@ class Bitrix24(object):
         :return: dict Response data
         """
         url = self._method_url_template.format(hostname=self.hostname)
-        params = params.copy() if params is not None else {}
-        params['auth'] = self._access_token
-        data = self._call(url, method, params)
+        data = self._call(url, method, {'auth': self._access_token}, params)
         return data
 
-    def _call(self, url, method, params):
-        uri = self._call_url_template.format(url=url, method=method)
-        data = request('post', uri, params)
+    def _call(self, url, method, query, params):
+        url = self._call_url_template.format(url=url, method=method)
+        data = request(url, query, params)
         return data
 
     def call_batch(self, calls, halt_on_error=False):
@@ -283,7 +280,7 @@ class Bitrix24(object):
         """
         url = self._webhook_url_template.format(hostname=self.hostname,
                                                 user_id=self.user_id, code=code)
-        data = self._call(url, method, params)
+        data = self._call(url, method, None, params)
         return data
 
     def call_batch_webhook(self, code, calls, halt_on_error=False):
@@ -301,7 +298,7 @@ class Bitrix24(object):
         :param halt_on_error: bool Halt on error
         :return: dict Response data
         """
-        data = self.call_webhook('batch', code, {
+        data = self.call_webhook(code, 'batch', {
             'cmd': prepare_batch_command(calls),
             'halt': halt_on_error
         })
