@@ -96,11 +96,11 @@ To **unbind an event** (this method calls `event.unbind` under the hood):
 
 Requesting resources with an authorization code is suitable for development of 3rd-party applications that are often quite cumbersome. However, sometimes it's enough to send a few simple calls. This is where webhooks come to action. 
 
-If only webhooks are used the minimum required configuration is as simple as the following:
+If only webhooks are used the minimum required configuration is as simple as the following (use `user_id` argument if you need to make webhook calls on behalf of another user, by default `1` is used):
 
 ```python
 >>> from pybitrix24 import Bitrix24
->>> bx24 = Bitrix24('my-subdomain.bitrix24.com', user_id=1)
+>>> bx24 = Bitrix24('my-subdomain.bitrix24.com')
 ```
 
 To make an **inbound webhook** call (this example requires the following permissions: `user`):

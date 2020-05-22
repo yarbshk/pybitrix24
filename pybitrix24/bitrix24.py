@@ -49,7 +49,7 @@ class Bitrix24(object):
     _call_url_template = '{url}{method}.json'
 
     def __init__(self, hostname, client_id=None, client_secret=None,
-                 user_id=None):
+                 user_id=1):
         """
         Initialize object attributes. Note that the application ID and key
         arguments are not required if webhooks will be called only.
