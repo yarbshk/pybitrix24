@@ -278,6 +278,10 @@ class Bitrix24(object):
         :param params: dict Request parameters
         :return: dict Response data
         """
+        if self.hostname is None:
+            raise PBx24AttributeError("The 'hostname' attribute is required")
+        if self.user_id is None:
+            raise PBx24AttributeError("The 'user_id' attribute is required")
         url = self._webhook_url_template.format(hostname=self.hostname,
                                                 user_id=self.user_id, code=code)
         data = self._call(url, method, None, params)
