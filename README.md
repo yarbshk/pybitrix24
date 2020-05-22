@@ -100,7 +100,7 @@ If only webhooks are used the minimum required configuration is as simple as the
 
 ```python
 >>> from pybitrix24 import Bitrix24
->>> bx24 = Bitrix24('my-subdomain.bitrix24.com')
+>>> bx24 = Bitrix24('my-subdomain.bitrix24.com', user_id=1)
 ```
 
 To make an **inbound webhook** call (this example requires the following permissions: `user`):
