@@ -8,32 +8,39 @@ from .exceptions import PBx24RequestError, PyBitrix24Error
 try:
     from urllib.request import Request, urlopen
     from urllib.parse import urlencode
+    from urllib.error import HTTPError
 except ImportError:
-    from urllib2 import Request, urlopen
+    from urllib2 import Request, urlopen, HTTPError
     from urllib import urlencode
 
 
+def decode_response(s):
+    if sys.version_info.major == 2:
+        return json.load(s)
+    else:
+        return json.loads(s.read().decode('utf-8'))
+
+
 def request(url, query=None, data=None):
-    if query:
+    if query is not None:
         url += '?' + urlencode(query)
 
-    if data:
+    if data is not None:
         data = json.dumps(data).encode('utf-8')
 
     # Make a request
-    req = Request(url, data=data,
-                  headers={'Content-Type': 'application/json'})
+    request_ = Request(url, data=data,
+                       headers={'Content-Type': 'application/json'})
     try:
-        resp = urlopen(req)
+        response = urlopen(request_)
+    except HTTPError as e:
+        return decode_response(e)
     except Exception as e:
         raise PBx24RequestError("Error on request", e)
 
     # Decode response body
     try:
-        if sys.version_info.major == 2:
-            return json.load(resp)
-        else:
-            return json.loads(resp.read().decode('utf-8'))
+        return decode_response(response)
     except Exception as e:
         raise PyBitrix24Error("Error decoding of server response", e)
 

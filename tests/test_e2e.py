@@ -99,6 +99,12 @@ class Bitrix24EndToEndTests(unittest.TestCase):
         self.assertNotIn('error', data)
         self.assertNotEqual(data['result'], [])
 
+    def test_call_webhook__graceful_error_handling(self):
+        data = self.bx24.call_webhook(self.webhook_code, 'user.add', params={})
+        self.assertIsInstance(data, dict)
+        self.assertIn('error', data)
+        self.assertIn('error_description', data)
+
     def test_call_batch_webhook(self):
         bx24hook = Bitrix24(self.hostname, user_id=1)
         calls = {
