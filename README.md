@@ -38,17 +38,17 @@ However, to make life a bit simpler there is a helper method that builds an auth
 'https://my-subdomain.bitrix24.com/oauth/authorize/?client_id=my.client.id&response_type=code'
 ```
 
-Finally, when an authorization code is received both [access](https://tools.ietf.org/html/rfc6749#section-1.4) and [refresh tokens](https://tools.ietf.org/html/rfc6749#section-1.5) can be obtained: 
+Finally, when an authorization code is received both [access](https://tools.ietf.org/html/rfc6749#section-1.4) and [refresh tokens](https://tools.ietf.org/html/rfc6749#section-1.5) can be obtained:
 
 ```python
->>> bx24.obtain_tokens('AnAuthorizationCode')
+>> > bx24.get_auth('AnAuthorizationCode')
 {'access_token': 'AnAccessToken', 'refresh_token': 'ARefreshToken', ...}
 ```
 
 As it was mentioned earlier it's not possible to get the authorization code automatically but it's possible to refresh tokens after initial receiving to make the session longer (note that both **tokens have 1 hour lifetime** after that they'll be expired and an authorization code must be granted again):
 
 ```python
->>> bx24.refresh_tokens()
+>> > bx24.refresh_auth()
 {'access_token': 'ANewAccessToken', 'refresh_token': 'ANewRefreshToken', ...}
 ```
 
@@ -61,7 +61,7 @@ A further turn for requesting Bitrix24 resources. An access token injects automa
 To make a **single call** (this example requires the following permissions: `user`):
 
 ```python
->>> bx24.call('user.get', {'ID': 1})
+>> > bx24.post('user.get', {'ID': 1})
 {'result': {...}}
 ```
 
@@ -128,4 +128,4 @@ That's the end of the quick introduction. Thanks!
 For more details, please, [explore source code](pybitrix24/bitrix24.py) or [ask me](https://github.com/yarbshk/pybitrix24/issues/new). Good luck!
 
 ## Copyright and License
-Copyright © 2017-2020 Yurii Rabeshko. Code released under the MIT license.
+Copyright © 2017-2021 Yurii Rabeshko. Code released under the MIT license.

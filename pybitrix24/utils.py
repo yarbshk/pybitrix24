@@ -1,48 +1,9 @@
-import json
-import sys
-
 from collections import OrderedDict
 
-from .exceptions import PBx24RequestError, PyBitrix24Error
-
 try:
-    from urllib.request import Request, urlopen
     from urllib.parse import urlencode
-    from urllib.error import HTTPError
 except ImportError:
-    from urllib2 import Request, urlopen, HTTPError
     from urllib import urlencode
-
-
-def decode_response(s):
-    if sys.version_info.major == 2:
-        return json.load(s)
-    else:
-        return json.loads(s.read().decode('utf-8'))
-
-
-def request(url, query=None, data=None):
-    if query is not None:
-        url += '?' + urlencode(query)
-
-    if data is not None:
-        data = json.dumps(data).encode('utf-8')
-
-    # Make a request
-    request_ = Request(url, data=data,
-                       headers={'Content-Type': 'application/json'})
-    try:
-        response = urlopen(request_)
-    except HTTPError as e:
-        return decode_response(e)
-    except Exception as e:
-        raise PBx24RequestError("Error on request", e)
-
-    # Decode response body
-    try:
-        return decode_response(response)
-    except Exception as e:
-        raise PyBitrix24Error("Error decoding of server response", e)
 
 
 def flatten(d):
@@ -92,7 +53,7 @@ def parametrize(params):
     return returned
 
 
-def encode_url(params):
+def multidict_urlencode(params):
     """Urlencode a multidimensional dict."""
 
     # Not doing duck typing here. Will make debugging easier.
@@ -119,27 +80,17 @@ def prepare_batch_command(calls):
     for name, call in calls.items():
         if isinstance(call, str):
             command = call
-        elif isinstance(call, tuple):
+        elif isinstance(call, tuple) or isinstance(call, list):
             try:
-                command = '{}?{}'.format(call[0], encode_url(call[1]))
+                command = '?'.join([call[0], multidict_urlencode(call[1])])
             except IndexError as e:
-                raise PyBitrix24Error(
-                    'The "' + name + '" call must be a pair of values', e)
+                raise ValueError('The "' + name + '" call must be a pair of values', e)
         elif isinstance(call, dict):
             try:
-                command = '{}?{}'.format(call['method'],
-                                         encode_url(call['params']))
+                command = '?'.join([call['method'], multidict_urlencode(call['params'])])
             except KeyError as e:
-                raise PyBitrix24Error(
-                    'The "' + name + '" call has the following required '
-                                     'keys: method, params.', e)
+                raise ValueError('The "' + name + '" call has required keys: method, params', e)
         else:
-            if isinstance(call, list):
-                raise PyBitrix24Error(
-                    'The "' + name + '" call must be a tuple')
-            else:
-                raise PyBitrix24Error(
-                    'The "' + name + '" call must be a string, a tuple or '
-                                     'a dictionary.')
+            raise ValueError('The "' + name + '" call must be a string, a tuple or a dictionary')
         commands[name] = command
     return commands
