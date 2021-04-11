@@ -4,3 +4,4 @@ wheel
 twine
 sphinx
 selenium
+flask
