@@ -125,7 +125,7 @@ To make a batch call of **inbound webhooks** (this example requires the followin
 
 That's the end of the quick introduction. Thanks!
 
-For more details, please, [explore source code](pybitrix24/bitrix24.py) or [ask me](https://github.com/yarbshk/pybitrix24/issues/new). Good luck!
+For more details, please, [explore source code](pybitrix24/pybitrix24.py) or [ask me](https://github.com/yarbshk/pybitrix24/issues/new). Good luck!
 
 ## Copyright and License
 Copyright © 2017-2021 Yurii Rabeshko. Code released under the MIT license.

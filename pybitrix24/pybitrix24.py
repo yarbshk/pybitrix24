@@ -1,7 +1,6 @@
 import json
 import sys
 from abc import ABC, abstractmethod
-from functools import cache
 
 from .utils import prepare_batch_command
 
@@ -76,12 +75,12 @@ class JsonCoder(BaseCoder):
 
 
 class UrlFormatter:
-    __url_tpl = 'https://{hostname}/{path}?{query}'
+    _url_tpl = 'https://{hostname}/{path}?{query}'
 
     @classmethod
     def format_url(cls, hostname, *path_components, query=None):
-        return cls.__url_tpl.format(hostname=hostname, path='/'.join(path_components),
-                                    query=urlencode(query) if query is not None else '')
+        return cls._url_tpl.format(hostname=hostname, path='/'.join(map(str, path_components)),
+                                   query=urlencode(query) if query is not None else '')
 
 
 class BaseClient(ABC):
@@ -91,14 +90,21 @@ class BaseClient(ABC):
         self.caller = caller or UrllibCaller()
 
     def _call(self, *path_components, query=None, data=None):
-        path_component_list = list(path_components)
-        path_component_list.append(path_component_list.pop() + '.' + self.coder.format)
-        url = UrlFormatter.format_url(self.hostname, *path_component_list, query=query)
-        req_body = self.coder.encode(data)
+        # Add a suffix (indicating data interchange format, for example, ".json") to the last path component
+        path_components = self._add_transport_to_rest_endpoints(path_components)
+        # Serialize data, make a call and then deserialize response body
+        url = UrlFormatter.format_url(self.hostname, *path_components, query=query)
+        req_body = self.coder.encode(data) if data is not None else None
         res_body = self.caller.post(url, body=req_body, headers={'Content-Type': self._get_content_type()})
         return self.coder.decode(res_body)
 
-    @cache
+    def _add_transport_to_rest_endpoints(self, path_components):
+        if path_components[0] != 'rest':
+            return path_components
+        path_component_list = list(path_components)
+        path_component_list.append(path_component_list.pop() + '.' + self.coder.format)
+        return tuple(path_component_list)
+
     def _get_content_type(self):
         return 'application/' + self.coder.format
 
@@ -111,13 +117,13 @@ class BaseClient(ABC):
 
 
 class ScriptClient(BaseClient):
-    def __init__(self, hostname, code, user_id=1, coder=None, caller=None):
+    def __init__(self, hostname, auth_code, user_id=1, coder=None, caller=None):
         super().__init__(hostname, coder=coder, caller=caller)
-        self.code = code
+        self.auth_code = auth_code
         self.user_id = user_id
 
     def call(self, method, params=None):
-        return self._call('rest', self.user_id, self.code, method, data=params)
+        return self._call('rest', self.user_id, self.auth_code, method, data=params)
 
 
 class ApplicationClient(BaseClient):
@@ -135,11 +141,11 @@ class ApplicationClient(BaseClient):
         })
         return UrlFormatter.format_url(self.hostname, 'oauth', 'authorize', query=query)
 
-    def get_auth(self, code, **query):
+    def get_auth(self, auth_code, **query):
         query.update({
             'client_id': self.client_id,
             'client_secret': self.client_secret,
-            'code': code,
+            'code': auth_code,
             'grant_type': 'authorization_code'
         })
         return self._fetch_auth_by(query)

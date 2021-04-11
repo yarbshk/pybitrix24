@@ -1,4 +1,3 @@
-from .bitrix24 import ScriptClient, ApplicationClient
-from .exceptions import *
+from .pybitrix24 import ScriptClient, ApplicationClient
 
-__version__ = '1.0.0'
+__version__ = '2.0.0'
