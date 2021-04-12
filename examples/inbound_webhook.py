@@ -1,14 +1,14 @@
 import os
 
-from pybitrix24 import ScriptClient
+from pybitrix24 import InboundWebhookClient
 
 HOSTNAME = os.environ.get('HOSTNAME')
 AUTH_CODE = os.environ.get('AUTH_CODE')
 
 
 def main():
-    pb24 = ScriptClient(HOSTNAME, AUTH_CODE)
-    print(pb24.call("profile"))
+    bx24 = InboundWebhookClient(HOSTNAME, AUTH_CODE)
+    print(bx24.call("profile"))
 
 
 if __name__ == '__main__':

@@ -13,21 +13,21 @@ except ImportError:
     from urllib import urlencode
 
 
-class PyBitrix24Exception(Exception):
+class PyBitrix24Error(Exception):
     pass
 
 
-class CallingException(PyBitrix24Exception):
+class HttpRequestError(PyBitrix24Error):
     pass
 
 
-class BaseCaller(ABC):
+class BaseHttpRequester(ABC):
     @abstractmethod
     def post(self, url, body=None, headers=None):
         pass
 
 
-class UrllibCaller(BaseCaller):
+class UrllibHttpRequester(BaseHttpRequester):
     def post(self, url, body=None, headers=None):
         request = Request(url, data=body, headers=headers)
         try:
@@ -35,43 +35,43 @@ class UrllibCaller(BaseCaller):
         except HTTPError as e:
             return e
         except Exception as e:
-            raise CallingException("Error on request", e)
+            raise HttpRequestError("Error on request", e)
 
 
-class CodingException(PyBitrix24Exception):
+class SerializationError(PyBitrix24Error):
     pass
 
 
-class BaseCoder(ABC):
+class BaseSerializer(ABC):
     format = None
 
     @abstractmethod
-    def encode(self, data):
+    def serialize(self, object_):
         pass
 
     @abstractmethod
-    def decode(self, body):
+    def deserialize(self, string_):
         pass
 
 
-class JsonCoder(BaseCoder):
+class JsonSerializer(BaseSerializer):
     format = 'json'
 
-    def encode(self, data):
+    def serialize(self, object_):
         try:
-            return json.dumps(data).encode('utf-8')
+            return json.dumps(object_).encode('utf-8')
         except Exception as e:
-            raise CodingException("Unable to encode data object", e)
+            raise SerializationError("Unable to encode data object", e)
 
-    def decode(self, body):
+    def deserialize(self, string_):
         # Decode response body
         try:
             if sys.version_info.major == 2:
-                return json.load(body)
+                return json.load(string_)
             else:
-                return json.loads(body.read().decode('utf-8'))
+                return json.loads(string_.read().decode('utf-8'))
         except Exception as e:
-            raise CodingException("Error decoding of server response", e)
+            raise SerializationError("Error decoding of server response", e)
 
 
 class UrlFormatter:
@@ -84,29 +84,29 @@ class UrlFormatter:
 
 
 class BaseClient(ABC):
-    def __init__(self, hostname, coder=None, caller=None):
+    def __init__(self, hostname, serializer=None, http_requester=None):
         self.hostname = hostname
-        self.coder = coder or JsonCoder()
-        self.caller = caller or UrllibCaller()
+        self.serializer = serializer or JsonSerializer()
+        self.http_requester = http_requester or UrllibHttpRequester()
 
     def _call(self, *path_components, query=None, data=None):
         # Add a suffix (indicating data interchange format, for example, ".json") to the last path component
         path_components = self._add_transport_to_rest_endpoints(path_components)
         # Serialize data, make a call and then deserialize response body
         url = UrlFormatter.format_url(self.hostname, *path_components, query=query)
-        req_body = self.coder.encode(data) if data is not None else None
-        res_body = self.caller.post(url, body=req_body, headers={'Content-Type': self._get_content_type()})
-        return self.coder.decode(res_body)
+        req_body = self.serializer.serialize(data) if data is not None else None
+        res_body = self.http_requester.post(url, body=req_body, headers={'Content-Type': self._get_content_type()})
+        return self.serializer.deserialize(res_body)
 
     def _add_transport_to_rest_endpoints(self, path_components):
         if path_components[0] != 'rest':
             return path_components
         path_component_list = list(path_components)
-        path_component_list.append(path_component_list.pop() + '.' + self.coder.format)
+        path_component_list.append(path_component_list.pop() + '.' + self.serializer.format)
         return tuple(path_component_list)
 
     def _get_content_type(self):
-        return 'application/' + self.coder.format
+        return 'application/' + self.serializer.format
 
     @abstractmethod
     def call(self, method, params=None):
@@ -116,9 +116,9 @@ class BaseClient(ABC):
         return self.call('batch', {'cmd': prepare_batch_command(calls), 'halt': halt_on_error})
 
 
-class ScriptClient(BaseClient):
-    def __init__(self, hostname, auth_code, user_id=1, coder=None, caller=None):
-        super().__init__(hostname, coder=coder, caller=caller)
+class InboundWebhookClient(BaseClient):
+    def __init__(self, hostname, auth_code, user_id=1, serializer=None, http_requester=None):
+        super().__init__(hostname, serializer=serializer, http_requester=http_requester)
         self.auth_code = auth_code
         self.user_id = user_id
 
@@ -126,9 +126,9 @@ class ScriptClient(BaseClient):
         return self._call('rest', self.user_id, self.auth_code, method, data=params)
 
 
-class ApplicationClient(BaseClient):
-    def __init__(self, hostname, client_id, client_secret, coder=None, caller=None):
-        super().__init__(hostname, coder=coder, caller=caller)
+class LocalApplicationClient(BaseClient):
+    def __init__(self, hostname, client_id, client_secret, serializer=None, http_requester=None):
+        super().__init__(hostname, serializer=serializer, http_requester=http_requester)
         self.client_id = client_id
         self.client_secret = client_secret
         self._access_token = None

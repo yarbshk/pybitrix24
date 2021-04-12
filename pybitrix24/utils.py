@@ -80,7 +80,7 @@ def prepare_batch_command(calls):
     for name, call in calls.items():
         if isinstance(call, str):
             command = call
-        elif isinstance(call, tuple) or isinstance(call, list):
+        elif isinstance(call, (list, tuple)):
             try:
                 command = '?'.join([call[0], multidict_urlencode(call[1])])
             except IndexError as e:
