@@ -119,21 +119,25 @@ class BaseClient(ABC):
     def _normalize_calls(cls, calls):
         return {name: cls._normalize_call(name, call) for name, call in calls.items()}
 
-    @staticmethod
-    def _normalize_call(name, call):
+    @classmethod
+    def _normalize_call(cls, name, call):
         if isinstance(call, str):
             return call
         elif isinstance(call, (list, tuple)):
             try:
-                return '?'.join([call[0], format_qs_deep(call[1])])
+                return cls._format_call_pair(call[0], format_qs_deep(call[1]))
             except IndexError as e:
                 raise ValueError('The "%s" call must be a pair of values' % name, e)
         elif isinstance(call, dict):
             try:
-                return '?'.join([call['method'], format_qs_deep(call['params'])])
+                return cls._format_call_pair(call['method'], format_qs_deep(call['params']))
             except KeyError as e:
                 raise ValueError('The "%s" call has required keys: method, params' % name, e)
         raise ValueError('The "%s" call must be a string, a tuple or a dictionary' % name)
+
+    @staticmethod
+    def _format_call_pair(method, params):
+        return method + '?' + params
 
 
 class InboundWebhookClient(BaseClient):
