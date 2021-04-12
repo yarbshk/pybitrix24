@@ -2,7 +2,7 @@ import json
 import sys
 from abc import ABC, abstractmethod
 
-from .utils import prepare_batch_command
+from .query_string import format_qs_deep
 
 try:
     from urllib.request import Request, urlopen
@@ -89,12 +89,12 @@ class BaseClient(ABC):
         self.serializer = serializer or JsonSerializer()
         self.http_requester = http_requester or UrllibHttpRequester()
 
-    def _call(self, *path_components, query=None, data=None):
+    def _call(self, *path_components, query=None, params=None):
         # Add a suffix (indicating data interchange format, for example, ".json") to the last path component
         path_components = self._add_transport_to_rest_endpoints(path_components)
         # Serialize data, make a call and then deserialize response body
         url = UrlFormatter.format_url(self.hostname, *path_components, query=query)
-        req_body = self.serializer.serialize(data) if data is not None else None
+        req_body = self.serializer.serialize(params) if params is not None else None
         res_body = self.http_requester.post(url, body=req_body, headers={'Content-Type': self._get_content_type()})
         return self.serializer.deserialize(res_body)
 
@@ -113,7 +113,27 @@ class BaseClient(ABC):
         pass
 
     def call_batch(self, calls, halt_on_error=False):
-        return self.call('batch', {'cmd': prepare_batch_command(calls), 'halt': halt_on_error})
+        return self.call('batch', params={'cmd': self._normalize_calls(calls), 'halt': halt_on_error})
+
+    @classmethod
+    def _normalize_calls(cls, calls):
+        return {name: cls._normalize_call(name, call) for name, call in calls.items()}
+
+    @staticmethod
+    def _normalize_call(name, call):
+        if isinstance(call, str):
+            return call
+        elif isinstance(call, (list, tuple)):
+            try:
+                return '?'.join([call[0], format_qs_deep(call[1])])
+            except IndexError as e:
+                raise ValueError('The "%s" call must be a pair of values' % name, e)
+        elif isinstance(call, dict):
+            try:
+                return '?'.join([call['method'], format_qs_deep(call['params'])])
+            except KeyError as e:
+                raise ValueError('The "%s" call has required keys: method, params' % name, e)
+        raise ValueError('The "%s" call must be a string, a tuple or a dictionary' % name)
 
 
 class InboundWebhookClient(BaseClient):
@@ -123,7 +143,7 @@ class InboundWebhookClient(BaseClient):
         self.user_id = user_id
 
     def call(self, method, params=None):
-        return self._call('rest', self.user_id, self.auth_code, method, data=params)
+        return self._call('rest', self.user_id, self.auth_code, method, params=params)
 
 
 class LocalApplicationClient(BaseClient):
@@ -166,4 +186,4 @@ class LocalApplicationClient(BaseClient):
         return self._fetch_auth_by(query)
 
     def call(self, method, params=None):
-        return self._call('rest', method, query={'auth': self._access_token}, data=params)
+        return self._call('rest', method, query={'auth': self._access_token}, params=params)
