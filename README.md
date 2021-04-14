@@ -17,6 +17,34 @@ $ pip install pybitrix24
 ## Getting started
 
 ### Inbound webhook
+This is definitely the easiest and fastest way to get started.
+
+This type of integration allows creating **automated scripts**. An automated script must have only a _hostname_ of your portal, and an _authorization code_ (previously generated on Bitrix24 website in the section: Market > Developer resources > Other > Inbound webhook) in order to start making requests to Bitrix24:
+```python
+>>> from pybitrix24 import InboundWebhookClient
+>>> b24 = InboundWebhookClient('b24-xxxxxx.bitrix24.com', 'xxxxxxxxxxxxxxxx')
+```
+
+An example of making a single query:
+```python
+>>> b24.call('user.get', {'ID': 1})
+{'result': [{...}], 'total': 1, 'time': {...}}
+```
+
+An example of making a batch query:
+```python
+>>> b24.call_batch({
+...     'get_user': ('user.current', {}), # or 'user.current'
+...     'get_department': {
+...         'method': 'department.get',
+...         'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
+...     }
+... })
+{'result': {'result': {'get_user': {...}, 'get_department': [{...}]}, 'result_error': [], 'result_total': {...}, 'result_next': [], 'result_time': {...}}, 'time': {...}}
+```
+
+An example of [a simple automated script](examples/inbound_webhook.py).
+
 ### Outbound webhook
 ### Local application
 
