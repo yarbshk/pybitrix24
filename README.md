@@ -28,7 +28,7 @@ This type of integration allows creating **automated scripts**. An automated scr
 An example of making a single query:
 ```python
 >>> b24.call('user.get', {'ID': 1})
-{'result': [{...}], 'total': 1, 'time': {...}}
+{'result': ...}
 ```
 
 An example of making a batch query:
@@ -40,7 +40,7 @@ An example of making a batch query:
 ...         'params': {'ID': '$result[get_user][UF_DEPARTMENT]'}
 ...     }
 ... })
-{'result': {'result': {'get_user': {...}, 'get_department': [{...}]}, 'result_error': [], 'result_total': {...}, 'result_next': [], 'result_time': {...}}, 'time': {...}}
+{'result': ...}
 ```
 
 An example of [a simple automated script](examples/inbound_webhook.py).
