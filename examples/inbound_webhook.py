@@ -11,7 +11,7 @@ def main():
     # Instantiate a client that is designed for inbound webhooks
     b24 = InboundWebhookClient(HOSTNAME, AUTH_CODE)
 
-    # Your business logic starts here... In our case we just dump the request output
+    # Your business logic starts here... In our case we just dump the profile info
     print(b24.call("profile"))
 
 
