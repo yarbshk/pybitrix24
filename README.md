@@ -69,7 +69,7 @@ When you open the sign in link, Bitrix24 will ask for your credentials, if there
 {'access_token': ...}
 ```
 
-The access token expires in a while (1 hour by default). So you can extend its lifetime by using the `refresh_auth` method every now and again.
+The access token is cached per local application client instance in order to be set for each request automatically. However, it expires in a while (1 hour by default) but you can extend its lifetime by using the `refresh_auth` method every now and again.
 
 After successful authorization you can make requests to Bitrix24 API as it is shown below.
 
