@@ -18,11 +18,13 @@ This is definitely the easiest and fastest way to get started.
 
 This type of integration allows creating **autonomous scripts**.
 
-An instance of `InboundWebhookClient` must be created in order to make inbound webhooks. The client requires only a _hostname_ ofthe Bitrix24 portal, and an _authorization code_ (previously generated on the Bitrix24 portal in the section: Market > Developer resources > Other > Inbound webhook) in order to start making requests to Bitrix24:
+An instance of `InboundWebhookClient` must be created in order to make inbound webhooks. The client requires only a _hostname_ of the Bitrix24 portal, and an _authorization code_ (previously generated on the Bitrix24 portal in the section: Market > Developer resources > Other > Inbound webhook) in order to start making requests to Bitrix24:
 ```python
 >>> from pybitrix24 import InboundWebhookClient
 >>> b24 = InboundWebhookClient('b24-xxxxxx.bitrix24.com', 'xxxxxxxxxxxxxxxx')
 ```
+
+The client will construct a URL under the hood in order to make webhook requests to Bitrix24 API.
 
 An example of making a single query:
 ```python
