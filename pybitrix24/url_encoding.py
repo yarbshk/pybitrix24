@@ -1,10 +1,7 @@
 from collections import OrderedDict
 import re
 
-try:
-    from urllib.parse import urlencode, unquote
-except ImportError:
-    from urllib import urlencode
+from .compatible.urllib_ import urlencode, unquote
 
 
 def _flatten(d):
@@ -54,7 +51,7 @@ def _parametrize(params):
     return returned
 
 
-def format_qs_deep(params):
+def urlencode_deep(params):
     """Urlencode a multidimensional dict."""
 
     # Not doing duck typing here. Will make debugging easier.
@@ -76,7 +73,7 @@ def format_qs_deep(params):
     return urlencode(url_params, doseq=True)
 
 
-def parse_qs_deep(qs, sep='&'):
+def urldecode_deep(qs, sep='&'):
     result = {}
     for segment in qs.split(sep):
         quoted_pair = segment.split('=')

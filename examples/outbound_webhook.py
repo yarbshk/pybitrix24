@@ -1,7 +1,7 @@
 import os
 
 from flask import Flask, request
-from pybitrix24 import parse_qs_deep
+from pybitrix24 import urldecode_deep
 
 # You can try out this script with your own credentials
 HOSTNAME = os.environ.get('HOSTNAME')
@@ -17,7 +17,7 @@ def index():
 
     # NOTE: There is no client for outbound requests due to the specifics of this type of integration
     # Use a helper function to deserialize the multidimensional x-www-form-urlencoded body
-    form = parse_qs_deep(req_body)
+    form = urldecode_deep(req_body)
 
     # Reject any request with an invalid application token
     if form.get('application_token') != APP_TOKEN:

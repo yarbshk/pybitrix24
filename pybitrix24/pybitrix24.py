@@ -1,101 +1,80 @@
 import json
-import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod, abstractproperty
+from collections import namedtuple
 
-from .query_string import format_qs_deep
-
-try:
-    from urllib.request import Request, urlopen
-    from urllib.parse import urlencode
-    from urllib.error import HTTPError
-except ImportError:
-    from urllib2 import Request, urlopen, HTTPError
-    from urllib import urlencode
+from .compatible.abc_ import ABC
+from .compatible.urllib_ import Request, urlopen, urlencode, HTTPError
+from .url_encoding import urlencode_deep
 
 
 class PyBitrix24Error(Exception):
     pass
 
 
-class HttpRequestError(PyBitrix24Error):
-    pass
-
-
-class BaseHttpRequester(ABC):
-    @abstractmethod
-    def post(self, url, body=None, headers=None):
-        pass
-
-
-class UrllibHttpRequester(BaseHttpRequester):
-    def post(self, url, body=None, headers=None):
-        request = Request(url, data=body, headers=headers)
-        try:
-            return urlopen(request)
-        except HTTPError as e:
-            return e
-        except Exception as e:
-            raise HttpRequestError("Error on request", e)
-
-
 class SerializationError(PyBitrix24Error):
     pass
 
 
+# Concise enum replacement for Python 2
+SerializationFormat = namedtuple('SerializationFormat', ['JSON', 'XML'])('json', 'xml')
+
+
 class BaseSerializer(ABC):
-    format = None
+    @abstractproperty
+    def format(self):
+        raise NotImplementedError("format() must be implemented by a subclass")
 
     @abstractmethod
-    def serialize(self, object_):
-        pass
+    def serialize(self, obj):
+        raise NotImplementedError("serialize(obj) must be implemented by a subclass")
 
     @abstractmethod
-    def deserialize(self, string_):
-        pass
+    def deserialize(self, s):
+        raise NotImplementedError("deserialize(s) must be implemented by a subclass")
 
 
 class JsonSerializer(BaseSerializer):
-    format = 'json'
+    @property
+    def format(self):
+        return SerializationFormat.JSON
 
-    def serialize(self, object_):
+    def serialize(self, obj):
         try:
-            return json.dumps(object_).encode('utf-8')
+            return json.dumps(obj)
         except Exception as e:
             raise SerializationError("Unable to encode data object", e)
 
-    def deserialize(self, string_):
-        # Decode response body
+    def deserialize(self, s):
         try:
-            if sys.version_info.major == 2:
-                return json.load(string_)
-            else:
-                return json.loads(string_.read().decode('utf-8'))
+            return json.loads(s)
         except Exception as e:
             raise SerializationError("Error decoding of server response", e)
 
 
-class UrlFormatter:
+# TODO: Add XML serializer
+
+
+class UrlFormatter(object):
     _url_tpl = 'https://{hostname}/{path}?{query}'
 
     @classmethod
-    def format_url(cls, hostname, *path_components, query=None):
+    def format_url(cls, hostname, path_components, query=None):
         return cls._url_tpl.format(hostname=hostname, path='/'.join(map(str, path_components)),
                                    query=urlencode(query) if query is not None else '')
 
 
 class BaseClient(ABC):
-    def __init__(self, hostname, serializer=None, http_requester=None):
+    def __init__(self, hostname, serializer=None):
         self.hostname = hostname
         self.serializer = serializer or JsonSerializer()
-        self.http_requester = http_requester or UrllibHttpRequester()
 
-    def _call(self, *path_components, query=None, params=None):
+    def _call(self, path_components, query=None, params=None):
         # Add a suffix (indicating data interchange format, for example, ".json") to the last path component
         path_components = self._add_transport_to_rest_endpoints(path_components)
         # Serialize data, make a call and then deserialize response body
-        url = UrlFormatter.format_url(self.hostname, *path_components, query=query)
+        url = UrlFormatter.format_url(self.hostname, path_components, query=query)
         req_body = self.serializer.serialize(params) if params is not None else None
-        res_body = self.http_requester.post(url, body=req_body, headers={'Content-Type': self._get_content_type()})
+        res_body = self._make_post_request(url, body=req_body, headers={'Content-Type': self._get_content_type()})
         return self.serializer.deserialize(res_body)
 
     def _add_transport_to_rest_endpoints(self, path_components):
@@ -107,6 +86,16 @@ class BaseClient(ABC):
 
     def _get_content_type(self):
         return 'application/' + self.serializer.format
+
+    @staticmethod
+    def _make_post_request(url, body=None, headers=None):
+        request = Request(url, data=body.encode('utf-8'), headers=headers)
+        try:
+            return urlopen(request).decode('utf-8')
+        except HTTPError as e:
+            return e
+        except Exception as e:
+            raise PyBitrix24Error("Error on request", e)
 
     @abstractmethod
     def call(self, method, params=None):
@@ -125,34 +114,34 @@ class BaseClient(ABC):
             return call
         elif isinstance(call, (list, tuple)):
             try:
-                return cls._format_call_pair(call[0], format_qs_deep(call[1]))
+                return cls._format_call_pair(call[0], call[1])
             except IndexError as e:
                 raise ValueError('The "%s" call must be a pair of values' % name, e)
         elif isinstance(call, dict):
             try:
-                return cls._format_call_pair(call['method'], format_qs_deep(call['params']))
+                return cls._format_call_pair(call['method'], call['params'])
             except KeyError as e:
                 raise ValueError('The "%s" call has required keys: method, params' % name, e)
         raise ValueError('The "%s" call must be a string, a tuple or a dictionary' % name)
 
     @staticmethod
     def _format_call_pair(method, params):
-        return method + '?' + params
+        return method + '?' + urlencode_deep(params)
 
 
 class InboundWebhookClient(BaseClient):
-    def __init__(self, hostname, auth_code, user_id=1, serializer=None, http_requester=None):
-        super().__init__(hostname, serializer=serializer, http_requester=http_requester)
+    def __init__(self, hostname, auth_code, user_id=1, serializer=None):
+        super(BaseClient, self).__init__(hostname, serializer=serializer)
         self.auth_code = auth_code
         self.user_id = user_id
 
     def call(self, method, params=None):
-        return self._call('rest', self.user_id, self.auth_code, method, params=params)
+        return self._call(['rest', self.user_id, self.auth_code, method], params=params)
 
 
 class LocalApplicationClient(BaseClient):
-    def __init__(self, hostname, client_id, client_secret, serializer=None, http_requester=None):
-        super().__init__(hostname, serializer=serializer, http_requester=http_requester)
+    def __init__(self, hostname, client_id, client_secret, serializer=None):
+        super(BaseClient, self).__init__(hostname, serializer=serializer)
         self.client_id = client_id
         self.client_secret = client_secret
         self._access_token = None
@@ -163,7 +152,7 @@ class LocalApplicationClient(BaseClient):
             'client_id': self.client_id,
             'response_type': 'code'
         })
-        return UrlFormatter.format_url(self.hostname, 'oauth', 'authorize', query=query)
+        return UrlFormatter.format_url(self.hostname, ['oauth', 'authorize'], query=query)
 
     def get_auth(self, auth_code, **query):
         query.update({
@@ -175,7 +164,7 @@ class LocalApplicationClient(BaseClient):
         return self._fetch_auth_by(query)
 
     def _fetch_auth_by(self, query):
-        data = self._call('oauth', 'token', query=query)
+        data = self._call(['oauth', 'token'], query=query)
         self._access_token = data.get('access_token')
         self._refresh_token = data.get('refresh_token')
         return data
@@ -190,4 +179,4 @@ class LocalApplicationClient(BaseClient):
         return self._fetch_auth_by(query)
 
     def call(self, method, params=None):
-        return self._call('rest', method, query={'auth': self._access_token}, params=params)
+        return self._call(['rest', method], query={'auth': self._access_token}, params=params)
