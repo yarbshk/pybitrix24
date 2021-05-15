@@ -66,8 +66,9 @@ To generate a sign in link automatically, the `get_auth_url` helper method can b
 ```
 
 When you open the sign in link, Bitrix24 will ask for your credentials, if there is no session. Then if you are signed in successfully it will redirect you to your handler path. This request would contain a `code` query parameter. It is an authorization code. You can pass this code to the `get_auth` method in order to get authorization (access token) and hence the permission to access Bitrix24 resources:
+
 ```python
->>> b24.get_auth('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
+>> > b24.fetch_auth('xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx')
 {'access_token': ...}
 ```
 

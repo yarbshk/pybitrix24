@@ -6,8 +6,8 @@ try:
     from urllib.error import HTTPError
 except ImportError:
     from urllib2 import Request, urlopen as _urlopen, HTTPError
-    from urllib import urlencode
-    from urllib import unquote
+    from urllib import urlencode, unquote
+
 
 def urlopen(*args, **kwargs):
     if sys.version_info.major <= 2:

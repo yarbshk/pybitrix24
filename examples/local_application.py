@@ -17,8 +17,7 @@ app.b24 = LocalApplicationClient(HOSTNAME, CLIENT_ID, CLIENT_SECRET)
 
 @app.route('/')
 def index():
-    # Sign in to obtain an authorization code.
-    # After user is signed in successfully the request will be redirected to the handler (see below)
+    # Authenticate a user and redirect them to the handler (see below) with an authorization code
     return redirect(app.b24.get_auth_url())
 
 
@@ -27,9 +26,9 @@ def handler():
     # Obtain the authorization code from the query string if any
     auth_code = request.args.get('code')
 
-    # Fetch authorization (access token) by the authorization code
     if auth_code is not None:
-        app.b24.get_auth(auth_code)
+        # Get authorization (access token) by the authorization code and cache it
+        app.b24.oauth2_client.fetch_auth(auth_code)
 
     # Your business logic starts here... In our case we just return the profile info
     return app.b24.call("profile")

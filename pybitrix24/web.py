@@ -1,7 +1,48 @@
-from collections import OrderedDict
 import re
+from collections import OrderedDict
 
-from .compatible.urllib_ import urlencode, unquote
+from .backcomp.urllib_ import Request, urlopen, urlencode, HTTPError
+from .backcomp.urllib_ import unquote
+from .exceptions import PyBitrix24Error
+from .serialization import JsonSerializer
+
+
+class HttpClient(object):
+    def __init__(self, serializer):
+        self.serializer = serializer
+
+    def post(self, url, data=None):
+        req_body = self.serializer.serialize(data) if data is not None else None
+        res_body = self._make_post_request(url, body=req_body, headers={'Content-Type': self._content_type})
+        return self.serializer.deserialize(res_body)
+
+    @property
+    def _content_type(self):
+        return 'application/' + self.serializer.format
+
+    @staticmethod
+    def _make_post_request(url, body=None, headers=None):
+        data = body.encode('utf-8') if body is not None else None
+        request = Request(url, data=data, headers=headers)
+        try:
+            return urlopen(request).decode('utf-8')
+        except HTTPError as e:
+            return e
+        except Exception as e:
+            raise PyBitrix24Error("Error on request", e)
+
+
+def default_http_client_factory(serializer=None):
+    return HttpClient(serializer or JsonSerializer())
+
+
+class UrlFormatter(object):
+    _https_tpl = 'https://{hostname}/{path}?{query}'
+
+    @classmethod
+    def format_https(cls, hostname, path_components, query_data=None):
+        return cls._https_tpl.format(hostname=hostname, path='/'.join(map(str, path_components)),
+                                     query=urlencode(query_data) if query_data is not None else '')
 
 
 def _flatten(d):

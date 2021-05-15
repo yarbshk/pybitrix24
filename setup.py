@@ -1,4 +1,5 @@
 import io
+import pybitrix24
 
 from setuptools import setup, find_packages
 
@@ -9,15 +10,15 @@ with io.open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='pybitrix24',
+    name=pybitrix24.__name__,
     long_description=long_description,
     long_description_content_type='text/markdown',
     description='The simplest zero dependency polyversion Python library for Bitrix24 REST API.',
     keywords='bitrix24 rest api client sdk library',
-    version='2.0.0',
+    version=pybitrix24.__version__,
     url='https://github.com/yarbshk/pybitrix24',
     author='Yurii Rabeshko',
-    author_email='yurii.rabeshko@mail.com',
+    author_email='george.rabeshko@gmail.com',
     license='MIT',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
