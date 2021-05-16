@@ -1,7 +1,7 @@
 import mock
 
 from pybitrix24.serialization import JsonSerializer, BaseSerializer
-from pybitrix24.web import RestClient
+from pybitrix24.web import RestClient, UrlFormatter
 
 
 class TestRestClient(object):
@@ -34,3 +34,17 @@ class TestRestClient(object):
         assert request.data is None
         assert 'Content-type' in request.headers
         assert res_data == 'response_body'
+
+
+class TestUrlFormatter(object):
+    def test_format_https_with_all_args(self):
+        # Act
+        url = UrlFormatter.format_https("example.net", ('foo', 'bar'), query_data={'baz': True})
+        # Assert
+        assert url == 'https://example.net/foo/bar?baz=True'
+
+    def test_format_https_without_query_data(self):
+        # Act
+        url = UrlFormatter.format_https("example.net", ('foo', 'bar'))
+        # Assert
+        assert url == 'https://example.net/foo/bar?'
