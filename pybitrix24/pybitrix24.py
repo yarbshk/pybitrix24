@@ -2,21 +2,24 @@ from abc import abstractproperty
 
 from .auth import default_oauth2_client_factory
 from .backcomp.abc_ import ABC
-from .web import UrlFormatter, urlencode_deep, default_http_client_factory
+from .web import UrlFormatter, urlencode_deep, default_rest_client_factory
 
 
 class BaseApiClient(ABC):
-    def __init__(self, hostname, serializer=None, http_client_factory=default_http_client_factory):
+    def __init__(self, hostname, serializer=None, rest_client_factory=default_rest_client_factory):
         self.hostname = hostname
-        self.http_client = http_client_factory(serializer=serializer)
+        self.rest_client = rest_client_factory(serializer=serializer)
 
     def call(self, method, params=None):
         # Add a suffix (indicating data interchange format, for example, ".json") to the last path component
         path_components = list(self._base_path_components)
-        path_components.append(method + '.' + self.serializer.format)
+        path_components.append(method + '.' + self.rest_client.serializer.format)
         # Serialize data, make a call and then deserialize response body
         url = UrlFormatter.format_https(self.hostname, path_components, query_data=self._query_data)
-        return self.http_client.post(url, params)
+        return self.rest_client.post(url, params)
+
+    def call_batch(self, calls, halt_on_error=False):
+        return self.call('batch', params={'cmd': self._normalize_calls(calls), 'halt': halt_on_error})
 
     @abstractproperty
     def _base_path_components(self):
@@ -25,9 +28,6 @@ class BaseApiClient(ABC):
     @property
     def _query_data(self):
         return None
-
-    def call_batch(self, calls, halt_on_error=False):
-        return self.call('batch', params={'cmd': self._normalize_calls(calls), 'halt': halt_on_error})
 
     @classmethod
     def _normalize_calls(cls, calls):
@@ -67,7 +67,7 @@ class LocalApplicationClient(BaseApiClient):
     def __init__(self, hostname, client_id, client_secret, serializer=None,
                  oauth2_client_factory=default_oauth2_client_factory):
         super(BaseApiClient, self).__init__(hostname, serializer=serializer)
-        self.oauth2_client = oauth2_client_factory(hostname, client_id, client_secret, http_client=self.http_client)
+        self.oauth2_client = oauth2_client_factory(hostname, client_id, client_secret, rest_client=self.rest_client)
 
     @property
     def _base_path_components(self):

@@ -7,7 +7,7 @@ from .exceptions import PyBitrix24Error
 from .serialization import JsonSerializer
 
 
-class HttpClient(object):
+class RestClient(object):
     def __init__(self, serializer):
         self.serializer = serializer
 
@@ -32,8 +32,8 @@ class HttpClient(object):
             raise PyBitrix24Error("Error on request", e)
 
 
-def default_http_client_factory(serializer=None):
-    return HttpClient(serializer or JsonSerializer())
+def default_rest_client_factory(serializer=None):
+    return RestClient(serializer or JsonSerializer())
 
 
 class UrlFormatter(object):

@@ -2,7 +2,7 @@ import threading
 from abc import abstractmethod
 
 from .backcomp.abc_ import ABC
-from .web import UrlFormatter, default_http_client_factory
+from .web import UrlFormatter, default_rest_client_factory
 
 
 class OAuth2Client(ABC):
@@ -24,11 +24,11 @@ class OAuth2Client(ABC):
 
 
 class Bitrix24OAuth2Client(OAuth2Client):
-    def __init__(self, hostname, client_id, client_secret, http_client=None):
+    def __init__(self, hostname, client_id, client_secret, rest_client=None):
         self.hostname = hostname
         self.client_id = client_id
         self.client_secret = client_secret
-        self.http_client = http_client or default_http_client_factory()
+        self.rest_client = rest_client or default_rest_client_factory()
         self._access_token = None
         self._refresh_token = None
 
@@ -62,7 +62,7 @@ class Bitrix24OAuth2Client(OAuth2Client):
 
     def _get_auth_data_and_cache_tokens(self, query_data):
         url = UrlFormatter.format_https(self.hostname, ('oauth', 'authorize'), query_data=query_data)
-        res_data = self.http_client.post(url)
+        res_data = self.rest_client.post(url)
         self._access_token = res_data.get('access_token')
         self._refresh_token = res_data.get('refresh_token')
         return res_data
