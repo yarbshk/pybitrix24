@@ -1,8 +1,7 @@
 import re
 from collections import OrderedDict
 
-from .backcomp.urllib_ import Request, urlopen, urlencode, HTTPError
-from .backcomp.urllib_ import unquote
+from .backcomp.urllib_ import Request, urlopen, urlencode, HTTPError, unquote
 from .exceptions import PyBitrix24Error
 from .serialization import JsonSerializer
 
