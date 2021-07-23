@@ -49,7 +49,7 @@ class Bitrix24(object):
     _call_url_template = '{url}{method}.json'
 
     def __init__(self, hostname, client_id=None, client_secret=None,
-                 user_id=1):
+                 user_id=1, auth_hostname=None):
         """
         Initialize object attributes. Note that the application ID and key
         arguments are not required if webhooks will be called only.
@@ -60,6 +60,7 @@ class Bitrix24(object):
         :param client_id: str Application ID
         :param client_secret: str Application key
         :param user_id: int A numeric ID of the user (used by webhooks)
+        :param auth_hostname: string A hostname of an auth server for box versions of Bitrix24
         """
         if hostname is None:
             raise PBx24ArgumentError("The 'hostname' argument is required")
@@ -67,6 +68,7 @@ class Bitrix24(object):
         self.client_id = client_id
         self.client_secret = client_secret
         self.user_id = user_id
+        self.auth_hostname = auth_hostname
         self._access_token = None
         self._refresh_token = None
 
@@ -100,7 +102,8 @@ class Bitrix24(object):
     def _build_oauth_url(self, action, query=None):
         if self.hostname is None:
             raise PBx24AttributeError("The 'hostname' attribute is required")
-        url = self._auth_url_template.format(hostname=self.hostname, action=action)
+        hostname = self.auth_hostname if self.auth_hostname is not None else self.hostname
+        url = self._auth_url_template.format(hostname=hostname, action=action)
         if query is not None:
             url += '?' + encode_url(query)
 
